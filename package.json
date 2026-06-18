@@ -1,0 +1,17 @@
+{
+  "name": "student-study-planner",
+  "version": "1.0.0",
+  "description": "Student Productivity & Study Planner Dashboard web application for course ITT588.",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx -y http-server -p 3000"
+  },
+  "keywords": [
+    "education",
+    "productivity",
+    "dashboard",
+    "scheduler"
+  ],
+  "author": "Group 4",
+  "license": "ISC"
+}
