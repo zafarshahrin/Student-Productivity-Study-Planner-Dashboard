@@ -2,6 +2,40 @@
 // STUDYFLOW - VUE.JS APPLICATION ENGINE
 // ==========================================
 
+// Timer Modes static constants
+const TIMER_MODES = { work: 25, short: 5, long: 15 };
+
+// Theme charts colors configurations
+const THEME_CHART_COLORS = {
+    calm: {
+        primary: '#4a7c59',
+        accent: '#d9bf77',
+        success: '#6096ba',
+        danger: '#d97870',
+        palette: ['#4a7c59', '#6096ba', '#d9bf77', '#a3b19b', '#ebd8a7', '#8fa094'],
+        border: '#ffffff',
+        text: '#1c2e21'
+    },
+    focus: {
+        primary: '#ffffff',
+        accent: '#888888',
+        success: '#e0e0e0',
+        danger: '#666666',
+        palette: ['#ffffff', '#cccccc', '#aaaaaa', '#888888', '#666666', '#444444'],
+        border: '#1e1e1e',
+        text: '#ffffff'
+    },
+    dark: {
+        primary: '#0ea5e9',
+        accent: '#a855f7',
+        success: '#10b981',
+        danger: '#ef4444',
+        palette: ['#0ea5e9', '#a855f7', '#10b981', '#f43f5e', '#fbbf24', '#6366f1'],
+        border: '#0f172a',
+        text: '#f8fafc'
+    }
+};
+
 const { createApp } = Vue;
 
 createApp({
@@ -912,37 +946,3 @@ createApp({
         });
     }
 }).mount('#app');
-
-// Timer Modes static constants
-const TIMER_MODES = { work: 25, short: 5, long: 15 };
-
-// Theme charts colors configurations
-const THEME_CHART_COLORS = {
-    calm: {
-        primary: '#4a7c59',
-        accent: '#d9bf77',
-        success: '#6096ba',
-        danger: '#d97870',
-        palette: ['#4a7c59', '#6096ba', '#d9bf77', '#a3b19b', '#ebd8a7', '#8fa094'],
-        border: '#ffffff',
-        text: '#1c2e21'
-    },
-    focus: {
-        primary: '#ffffff',
-        accent: '#888888',
-        success: '#e0e0e0',
-        danger: '#666666',
-        palette: ['#ffffff', '#cccccc', '#aaaaaa', '#888888', '#666666', '#444444'],
-        border: '#1e1e1e',
-        text: '#ffffff'
-    },
-    dark: {
-        primary: '#0ea5e9',
-        accent: '#a855f7',
-        success: '#10b981',
-        danger: '#ef4444',
-        palette: ['#0ea5e9', '#a855f7', '#10b981', '#f43f5e', '#fbbf24', '#6366f1'],
-        border: '#0f172a',
-        text: '#f8fafc'
-    }
-};
