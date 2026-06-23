@@ -752,11 +752,25 @@ createApp({
 
         // ChartJS Rendering Core
         renderCharts() {
+            if (this.activeTab !== 'dashboard') return;
+
             const total = this.tasks.length;
             const canvasSub = document.getElementById('subjectChart');
             const canvasPri = document.getElementById('priorityChart');
-            
-            if (total === 0 || !canvasSub || !canvasPri) return;
+
+            if (!canvasSub || !canvasPri) return;
+
+            // Destroy existing charts safely before recreating
+            if (this.subjectChartInstance) {
+                try { this.subjectChartInstance.destroy(); } catch(e) {}
+                this.subjectChartInstance = null;
+            }
+            if (this.priorityChartInstance) {
+                try { this.priorityChartInstance.destroy(); } catch(e) {}
+                this.priorityChartInstance = null;
+            }
+
+            if (total === 0) return;
 
             const colors = THEME_CHART_COLORS[this.theme] || THEME_CHART_COLORS.calm;
             Chart.defaults.color = colors.text;
@@ -770,8 +784,13 @@ createApp({
             const subLabels = Object.keys(subjectsObj);
             const subValues = Object.values(subjectsObj);
 
-            if (this.subjectChartInstance) this.subjectChartInstance.destroy();
-            this.subjectChartInstance = new Chart(canvasSub, {
+            // If the canvas 2D context isn't ready yet, retry shortly.
+            if (!canvasSub.getContext || !canvasSub.getContext('2d')) {
+                setTimeout(() => { this.renderCharts(); }, 60);
+                return;
+            }
+
+            const subjectConfig = {
                 type: 'doughnut',
                 data: {
                     labels: subLabels,
@@ -793,7 +812,27 @@ createApp({
                     },
                     cutout: '60%'
                 }
-            });
+            };
+
+            // Ensure any existing chart tied to this canvas is removed, then create.
+            try {
+                const existingSub = Chart.getChart(canvasSub);
+                if (existingSub) existingSub.destroy();
+                this.subjectChartInstance = new Chart(canvasSub, subjectConfig);
+            } catch (err) {
+                // If canvas is already in use by another Chart instance, attempt to replace the canvas and retry.
+                if (err && /Canvas is already in use/i.test(err.message || '')) {
+                    try {
+                        const newCanvas = canvasSub.cloneNode(true);
+                        canvasSub.parentNode.replaceChild(newCanvas, canvasSub);
+                        this.subjectChartInstance = new Chart(newCanvas, subjectConfig);
+                    } catch (e) {
+                        console.error('Failed to recreate subject chart after replacing canvas:', e);
+                    }
+                } else {
+                    console.error('Failed to create subject chart:', err);
+                }
+            }
 
             // Priority Chart calculations
             const prioObj = { High: 0, Medium: 0, Low: 0 };
@@ -801,8 +840,13 @@ createApp({
                 if (prioObj.hasOwnProperty(t.priority)) prioObj[t.priority]++;
             });
 
-            if (this.priorityChartInstance) this.priorityChartInstance.destroy();
-            this.priorityChartInstance = new Chart(canvasPri, {
+            // Ensure priority canvas context is ready before attempting to draw.
+            if (!canvasPri.getContext || !canvasPri.getContext('2d')) {
+                setTimeout(() => { this.renderCharts(); }, 60);
+                return;
+            }
+
+            const priorityConfig = {
                 type: 'bar',
                 data: {
                     labels: ['High', 'Medium', 'Low'],
@@ -827,7 +871,25 @@ createApp({
                         x: { grid: { display: false } }
                     }
                 }
-            });
+            };
+
+            try {
+                const existingPri = Chart.getChart(canvasPri);
+                if (existingPri) existingPri.destroy();
+                this.priorityChartInstance = new Chart(canvasPri, priorityConfig);
+            } catch (err) {
+                if (err && /Canvas is already in use/i.test(err.message || '')) {
+                    try {
+                        const newCanvas = canvasPri.cloneNode(true);
+                        canvasPri.parentNode.replaceChild(newCanvas, canvasPri);
+                        this.priorityChartInstance = new Chart(newCanvas, priorityConfig);
+                    } catch (e) {
+                        console.error('Failed to recreate priority chart after replacing canvas:', e);
+                    }
+                } else {
+                    console.error('Failed to create priority chart:', err);
+                }
+            }
         },
 
         // Helper date generator
@@ -946,3 +1008,4 @@ createApp({
         });
     }
 }).mount('#app');
+
