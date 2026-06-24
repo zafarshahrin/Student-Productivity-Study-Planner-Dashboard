@@ -1,5 +1,60 @@
 <template>
   <div class="space-y-6">
+
+    <!-- Due Today Notification Banner -->
+    <transition name="notif-slide">
+      <div
+        v-if="dueTodayTasks.length > 0 && !notifDismissed"
+        class="notif-banner relative overflow-hidden border rounded-sm p-4"
+      >
+        <!-- Animated accent strip -->
+        <div class="notif-accent-bar"></div>
+
+        <div class="flex items-start justify-between gap-3">
+          <!-- Icon + Header -->
+          <div class="flex items-start gap-3 flex-1 min-w-0">
+            <div class="notif-bell-wrap shrink-0 mt-0.5">
+              <Bell class="w-4 h-4 notif-bell-icon" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-display font-bold uppercase tracking-widest notif-title mb-2">
+                {{ dueTodayTasks.length }} Task{{ dueTodayTasks.length > 1 ? 's' : '' }} Due Today
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="task in dueTodayTasks"
+                  :key="task.id"
+                  class="notif-task-chip flex items-center gap-1.5"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full shrink-0"
+                    :class="getNotifPriorityDot(task.priority)"
+                  ></span>
+                  <span class="text-[11px] font-display font-semibold notif-task-name truncate max-w-[180px]">
+                    {{ task.title }}
+                  </span>
+                  <span
+                    class="text-[9px] font-mono px-1 border uppercase font-bold shrink-0"
+                    :class="getNotifPriorityBadge(task.priority)"
+                  >
+                    {{ task.priority }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dismiss button -->
+          <button
+            @click="notifDismissed = true"
+            class="notif-dismiss shrink-0 p-1 rounded-sm"
+            title="Dismiss notification"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </transition>
     <!-- Summary Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total Tasks -->
@@ -179,10 +234,38 @@
 
 <script setup>
 import { ref, inject, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Bell, X } from 'lucide-vue-next'
 import { Chart } from 'chart.js/auto'
 
 const tasks = inject('tasks')
+
+// Due Today Notification
+const notifDismissed = ref(false)
+
+const dueTodayTasks = computed(() => {
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  return tasks.value.filter(t => t.status === 'pending' && t.deadline === todayStr)
+})
+
+// Re-show notification when new due-today tasks appear
+watch(dueTodayTasks, (newVal, oldVal) => {
+  if (newVal.length > oldVal.length) {
+    notifDismissed.value = false
+  }
+})
+
+const getNotifPriorityDot = (priority) => {
+  if (priority === 'High') return 'bg-rose-500'
+  if (priority === 'Medium') return 'bg-amber-400'
+  return 'bg-emerald-500'
+}
+
+const getNotifPriorityBadge = (priority) => {
+  if (priority === 'High') return 'border-rose-500/30 bg-rose-500/15 text-rose-500'
+  if (priority === 'Medium') return 'border-amber-500/30 bg-amber-500/15 text-amber-500'
+  return 'border-emerald-500/30 bg-emerald-500/15 text-emerald-500'
+}
 
 // Rotating Study Tips state
 const activeTipIndex = ref(0)
@@ -462,3 +545,135 @@ onBeforeUnmount(() => {
   if (themeObserver) themeObserver.disconnect()
 })
 </script>
+
+<style scoped>
+/* ─── Notification Banner ─────────────────────────────────────────────────── */
+.notif-banner {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)),
+    var(--color-bg-card)
+  );
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  box-shadow: 0 2px 16px color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+/* Animated shimmer bar on the left edge */
+.notif-accent-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--color-accent),
+    color-mix(in srgb, var(--color-accent) 50%, transparent)
+  );
+  animation: notif-bar-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes notif-bar-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* Bell icon ring animation */
+.notif-bell-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  flex-shrink: 0;
+}
+
+.notif-bell-icon {
+  color: var(--color-accent);
+  animation: bell-ring 3s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+@keyframes bell-ring {
+  0%,  100% { transform: rotate(0deg); }
+  5%         { transform: rotate(18deg); }
+  10%        { transform: rotate(-15deg); }
+  15%        { transform: rotate(10deg); }
+  20%        { transform: rotate(-6deg); }
+  25%        { transform: rotate(0deg); }
+}
+
+/* Title text */
+.notif-title {
+  color: var(--color-text-h);
+  letter-spacing: 0.08em;
+}
+
+/* Individual task chip */
+.notif-task-chip {
+  background: color-mix(in srgb, var(--color-bg-panel) 80%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  padding: 3px 8px;
+  transition: background 0.15s ease;
+}
+
+.notif-task-chip:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-panel));
+}
+
+.notif-task-name {
+  color: var(--color-text-h);
+}
+
+/* Dismiss button */
+.notif-dismiss {
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.notif-dismiss:hover {
+  color: var(--color-text-h);
+  background: var(--color-bg-panel);
+  border-color: var(--color-border);
+}
+
+/* Slide transition */
+.notif-slide-enter-active {
+  animation: notif-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.notif-slide-leave-active {
+  animation: notif-out 0.25s ease forwards;
+}
+
+@keyframes notif-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scaleY(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@keyframes notif-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    max-height: 200px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scaleY(0.95);
+    max-height: 0;
+  }
+}
+</style>
