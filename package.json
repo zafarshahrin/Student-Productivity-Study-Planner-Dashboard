@@ -1,17 +1,22 @@
 {
   "name": "student-study-planner",
-  "version": "1.0.0",
-  "description": "Student Productivity & Study Planner Dashboard web application for course ITT588.",
-  "main": "index.html",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "npx -y http-server -p 3000"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "keywords": [
-    "education",
-    "productivity",
-    "dashboard",
-    "scheduler"
-  ],
-  "author": "Group 4",
-  "license": "ISC"
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "lucide-vue-next": "^1.0.0",
+    "vue": "^3.5.38"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.1",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "tailwindcss": "^4.3.1",
+    "vite": "^8.1.0"
+  }
 }
