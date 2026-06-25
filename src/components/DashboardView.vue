@@ -225,28 +225,8 @@
           </p>
         </div>
 
-        <!-- Study Tips -->
-        <div class="premium-card p-4 flex flex-col justify-between min-h-[172px]">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)]">Study Tip Carousel</h3>
-            <div class="flex items-center gap-1">
-              <button @click="prevTip" class="p-1 hover:bg-[var(--color-bg-panel)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-h)] cursor-pointer">
-                <ChevronLeft class="w-3 h-3"/>
-              </button>
-              <button @click="nextTip" class="p-1 hover:bg-[var(--color-bg-panel)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-h)] cursor-pointer">
-                <ChevronRight class="w-3 h-3"/>
-              </button>
-            </div>
-          </div>
-          <div class="flex-1 flex flex-col justify-center py-3">
-            <h4 class="text-xs font-bold text-[var(--color-accent)] font-display uppercase tracking-wider mb-1">{{ currentTip.strategy }}</h4>
-            <p class="text-xs text-[var(--color-text-muted)] leading-relaxed font-body">{{ currentTip.tip }}</p>
-          </div>
-          <div class="flex justify-center gap-1.5 mt-1">
-            <span v-for="(tip, idx) in studyTips" :key="idx" class="w-1.5 h-1.5 transition-colors"
-              :class="activeTipIndex === idx ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'"></span>
-          </div>
-        </div>
+     
+        
 
       </div>
     </div>
