@@ -135,7 +135,6 @@ const menuItems = [
 
 const themes = [
   { id: 'calm', label: 'Calm', color: '#5f7c65' },
-  { id: 'focus', label: 'Focus', color: '#000000' },
   { id: 'dark', label: 'Dark', color: '#3b82f6' }
 ]
 

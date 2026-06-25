@@ -118,6 +118,39 @@
         </div>
       </div>
     </div>
+
+    <!-- Session History -->
+    <div class="premium-card p-4">
+      <div class="flex items-center justify-between mb-3 border-b border-[var(--color-border)] pb-2">
+        <h4 class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">
+          Session History
+        </h4>
+        <button v-if="history.length > 0" @click="clearHistory" class="text-[10px] uppercase font-display text-[var(--color-text-muted)] hover:text-red-500 transition-colors cursor-pointer">
+          Clear History
+        </button>
+      </div>
+      
+      <div v-if="history.length === 0" class="text-center py-4 text-xs font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
+        No completed sessions yet. Start focusing!
+      </div>
+      
+      <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
+        <div v-for="session in history" :key="session.id" class="flex items-center justify-between p-2 border border-[var(--color-border)] bg-[var(--color-bg-card)] transition-colors hover:border-[var(--color-text-h)]">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-[var(--color-text-h)] font-display">{{ session.name }}</span>
+              <span class="px-1.5 py-0.5 text-[9px] uppercase font-bold bg-green-500/10 text-green-600 border border-green-500/20 rounded-sm">Completed</span>
+            </div>
+            <div class="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">
+              {{ session.timestamp }}
+            </div>
+          </div>
+          <div class="text-xs font-mono font-semibold text-[var(--color-text-h)]">
+            {{ session.duration }} min
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -138,6 +171,14 @@ const durations = ref({
 
 const remainingSeconds = ref(25 * 60)
 let timerId = null
+
+const history = ref([])
+let sessionCount = 0
+
+const clearHistory = () => {
+  history.value = []
+  sessionCount = 0
+}
 
 const modes = [
   { id: 'work', label: 'Work session' },
@@ -241,6 +282,19 @@ const startInterval = () => {
       clearLocalStorageState()
       playBeep()
       triggerToast(`Timer finished: "${activeMode.value.toUpperCase()}" session complete.`)
+      
+      if (activeMode.value === 'work') {
+        sessionCount++
+        const now = new Date()
+        const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+        history.value.unshift({
+          id: Date.now(),
+          name: `Session #${sessionCount}`,
+          duration: durations.value.work,
+          timestamp: `Today, ${timeStr}`
+        })
+      }
+
       // Auto-reset to default
       remainingSeconds.value = totalSecondsForMode.value
     }

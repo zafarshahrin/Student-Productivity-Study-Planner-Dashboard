@@ -1,5 +1,50 @@
 <template>
   <div class="space-y-6">
+    <!-- My Study Preferences -->
+    <div class="premium-card p-5 print:hidden">
+      <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
+        My Study Preferences
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Study Start Time -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
+            Study Start Time
+          </label>
+          <input 
+            v-model="settings.studyStartTime" 
+            type="time" 
+            class="premium-input text-xs font-display"
+          />
+        </div>
+
+        <!-- Break Duration -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
+            Break Duration
+          </label>
+          <select v-model.number="settings.breakDuration" class="premium-input text-xs font-display">
+            <option :value="5">5 min</option>
+            <option :value="10">10 min</option>
+            <option :value="15">15 min</option>
+            <option :value="30">30 min</option>
+          </select>
+        </div>
+
+        <!-- Break Frequency -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
+            Break Frequency
+          </label>
+          <select v-model.number="settings.breakFrequency" class="premium-input text-xs font-display">
+            <option :value="1">After every 1 hour</option>
+            <option :value="2">After every 2 hours</option>
+            <option :value="3">After every 3 hours</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- Settings Panel -->
     <div class="premium-card p-5 print:hidden">
       <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
@@ -60,7 +105,7 @@
           class="px-4 py-2 text-xs font-display font-bold uppercase tracking-wider border-b-2 -mb-[2px] transition-all cursor-pointer"
           :class="activeSubTab === 'weekly' ? 'border-[var(--color-accent)] text-[var(--color-text-h)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-h)]'"
         >
-          Weekly Schedule Grid
+          Weekly Schedule (Task Deadlines)
         </button>
       </div>
       
@@ -81,12 +126,12 @@
             Daily Timeline (Today)
           </h4>
           <span class="text-xs font-mono text-[var(--color-text-muted)]">
-            Starts at 9:00 AM • Max {{ settings.dailyHourLimit }} Study Hours
+            Starts at {{ formatTime(getParsedStartTime()) }} • Max {{ settings.dailyHourLimit }} Study Hours
           </span>
         </div>
 
         <div v-if="dailyTimeline.length === 0" class="py-8 text-center text-xs font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
-          No tasks scheduled for today. Add pending tasks or adjust settings.
+          No tasks added to today's plan yet. Go to Task Manager and toggle "Add to Today's Plan" on pending tasks.
         </div>
 
         <!-- Vertical Timeline List -->
@@ -110,7 +155,7 @@
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <div>
                   <span class="text-[10px] font-mono font-semibold uppercase text-[var(--color-text-muted)]">
-                    {{ block.startTimeStr }} - {{ block.endTimeStr }} ({{ formatDuration(block.durationHrs) }})
+                    {{ block.startTimeStr }} - {{ block.endTimeStr }} ({{ formatDuration(block.durationHrs) }}{{ block.isEstimatedFallback ? ' est.' : '' }})
                   </span>
                   <h5 class="text-sm font-bold text-[var(--color-text-h)] font-display mt-0.5">
                     {{ block.title }}
@@ -138,11 +183,16 @@
 
     <!-- Weekly Grid View -->
     <div v-else class="space-y-4">
+      <!-- Header subtitle -->
+      <p class="text-xs font-mono text-[var(--color-text-muted)] -mt-2">
+        Tasks are arranged by their deadline date
+      </p>
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
         <div 
           v-for="day in weeklySchedule" 
           :key="day.name"
-          class="premium-card p-3 flex flex-col justify-between min-h-[360px]"
+          class="premium-card p-3 flex flex-col min-h-[360px]"
           :class="{ 'opacity-60 bg-[var(--color-bg-panel)]/30': isPastDay(day.date) }"
         >
           <!-- Day Name -->
@@ -155,35 +205,27 @@
             </span>
           </div>
 
-          <!-- Scheduled items for day -->
-          <div class="flex-1 space-y-2 overflow-y-auto max-h-[260px] pr-1">
+          <!-- Tasks due on this day -->
+          <div class="flex-1 space-y-2 overflow-y-auto max-h-[300px] pr-1">
             <div 
-              v-for="(block, idx) in day.blocks" 
+              v-for="(task, idx) in day.tasks" 
               :key="idx"
               class="p-2 border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[11px] leading-tight"
-              :style="block.type === 'break' ? 'border-left: 2px solid #d97706;' : 'border-left: 2px solid var(--color-accent);'"
+              style="border-left: 2px solid var(--color-accent);"
             >
               <div class="font-bold text-[var(--color-text-h)] truncate">
-                {{ block.title }}
+                {{ task.title }}
               </div>
               <div class="flex items-center justify-between text-[9px] text-[var(--color-text-muted)] font-mono mt-1">
-                <span>{{ block.subject || 'Break' }}</span>
-                <span>{{ block.durationHrs }} hrs</span>
+                <span class="truncate mr-1">{{ task.subject || '—' }}</span>
+                <span class="shrink-0 text-[var(--color-accent)] font-semibold">{{ task.deadlineTimeStr }}</span>
               </div>
             </div>
 
             <!-- Empty state for day -->
-            <div v-if="day.blocks.length === 0" class="py-12 text-center text-[10px] font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
-              Free Day
+            <div v-if="day.tasks.length === 0" class="py-12 text-center text-[10px] font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
+              No Deadlines
             </div>
-          </div>
-
-          <!-- Total day load -->
-          <div class="border-t border-[var(--color-border)] pt-2 mt-2 flex items-center justify-between text-[10px] font-mono">
-            <span class="text-[var(--color-text-muted)]">Workload:</span>
-            <span class="font-semibold" :class="day.totalHrs > settings.dailyHourLimit ? 'text-red-500' : 'text-[var(--color-text-h)]'">
-              {{ day.totalHrs }} / {{ settings.dailyHourLimit }} hrs
-            </span>
           </div>
         </div>
       </div>
@@ -197,6 +239,7 @@ import { Printer } from 'lucide-vue-next'
 
 const tasks = inject('tasks')
 const settings = inject('plannerSettings')
+const todayPlan = inject('todayPlan')
 
 const activeSubTab = ref('daily')
 
@@ -217,10 +260,23 @@ const formatDuration = (hours) => {
 const formatTime = (timeDecimal) => {
   const hoursInt = Math.floor(timeDecimal)
   const minsInt = Math.round((timeDecimal - hoursInt) * 60)
-  const period = hoursInt >= 12 ? 'PM' : 'AM'
-  const displayHours = hoursInt % 12 === 0 ? 12 : hoursInt % 12
+  
+  let h = hoursInt % 24
   const displayMins = minsInt < 10 ? '0' + minsInt : minsInt
+  
+  const period = h >= 12 ? 'PM' : 'AM'
+  let displayHours = h % 12
+  if (displayHours === 0) displayHours = 12
+  
   return `${displayHours}:${displayMins} ${period}`
+}
+
+const getParsedStartTime = () => {
+  if (settings.value.studyStartTime) {
+    const [sh, sm] = settings.value.studyStartTime.split(':')
+    return parseInt(sh, 10) + parseInt(sm, 10) / 60
+  }
+  return 9.0
 }
 
 // Date helper: Format header as "Jun 24"
@@ -235,87 +291,130 @@ const isPastDay = (date) => {
   return date < today
 }
 
+// Reliable date parsing to avoid UTC shifts and include time
+const getTaskDeadlineDate = (task) => {
+  if (!task.deadline) {
+    const fallback = new Date()
+    fallback.setHours(23, 59, 59, 999)
+    return fallback
+  }
+
+  if (task.deadline.includes('T') || task.deadline.includes(' ')) {
+    return new Date(task.deadline)
+  }
+
+  const [y, m, d] = task.deadline.split('-')
+  const dObj = new Date(y, m - 1, d)
+  
+  if (task.deadlineTime) {
+    const [h, min] = task.deadlineTime.split(':')
+    dObj.setHours(parseInt(h, 10), parseInt(min, 10), 0, 0)
+  } else {
+    dObj.setHours(23, 59, 59, 999)
+  }
+  
+  return dObj
+}
+
 // Sort tasks based on selected planning strategy
-const getSortedPendingTasks = () => {
-  const pending = tasks.value.filter(t => t.status === 'pending')
+// For DAILY TIMELINE: only tasks the user added to today's plan
+// For WEEKLY GRID: all pending tasks
+const getSortedPendingTasks = (forDaily = false) => {
+  let pending = tasks.value.filter(t => t.status === 'pending')
+
+  // If building the daily timeline, only include user-selected tasks
+  if (forDaily) {
+    const planSet = todayPlan ? todayPlan.value : new Set()
+    pending = pending.filter(t => planSet.has(t.id))
+  }
 
   if (settings.value.planningStrategy === 'priority') {
-    const priorityWeights = { High: 3, Medium: 2, Low: 1 }
-    return [...pending].sort((a, b) => {
-      const weightDiff = (priorityWeights[b.priority] || 0) - (priorityWeights[a.priority] || 0)
-      if (weightDiff !== 0) return weightDiff
-      return new Date(a.deadline) - new Date(b.deadline) // Tie-breaker: closest deadline first
-    })
+    // Auto-priority sort: closest deadline first (simulates high-priority urgency)
+    return [...pending].sort((a, b) => getTaskDeadlineDate(a) - getTaskDeadlineDate(b))
   }
 
   if (settings.value.planningStrategy === 'deadline') {
-    return [...pending].sort((a, b) => {
-      const deadlineDiff = new Date(a.deadline) - new Date(b.deadline)
-      if (deadlineDiff !== 0) return deadlineDiff
-      const priorityWeights = { High: 3, Medium: 2, Low: 1 }
-      return (priorityWeights[b.priority] || 0) - (priorityWeights[a.priority] || 0)
-    })
+    return [...pending].sort((a, b) => getTaskDeadlineDate(a) - getTaskDeadlineDate(b))
   }
 
-  // 'balanced': Mix of both, sorting by deadline but prioritizing higher hours tasks to start earlier
+  // 'balanced': sort by deadline, tie-break by estimated hours descending
   return [...pending].sort((a, b) => {
-    const dDiff = new Date(a.deadline) - new Date(b.deadline)
+    const dDiff = getTaskDeadlineDate(a) - getTaskDeadlineDate(b)
     if (dDiff !== 0) return dDiff
-    return b.estimatedHours - a.estimatedHours
+    return (b.estimatedHours || 0) - (a.estimatedHours || 0)
   })
 }
 
-// Compute daily timeline starting at 9:00 AM
+// Compute daily timeline — uses only today's-plan tasks
 const dailyTimeline = computed(() => {
-  const sortedTasks = getSortedPendingTasks()
+  const sortedTasks = getSortedPendingTasks(true) // true = daily filter
   const timeline = []
   
-  let currentHour = 9.0 // Represents 9:00 AM
+  let currentHour = getParsedStartTime()
   let studyHoursScheduled = 0
-  const maxStudyLimit = settings.value.dailyHourLimit
+  const maxStudyLimit = settings.value.dailyHourLimit || 6
+  const breakFreq = settings.value.breakFrequency || 2
+  const breakDur = (settings.value.breakDuration || 15) / 60
+  
+  let timeSinceLastBreak = 0
 
   for (const task of sortedTasks) {
     if (studyHoursScheduled >= maxStudyLimit) break
 
-    // Calculate how much we can study this task today
-    // Breaks do NOT count toward the study budget — only study blocks do
+    const isEstimated = !task.estimatedHours || task.estimatedHours === 0
+    const actualHours = isEstimated ? 1 : task.estimatedHours
+
     const remainingLimit = maxStudyLimit - studyHoursScheduled
-    const duration = Math.min(task.estimatedHours, remainingLimit)
+    let taskDurationLeft = Math.min(actualHours, remainingLimit)
 
-    if (duration <= 0) continue
+    if (taskDurationLeft <= 0) continue
 
-    // Schedule study block
-    const startTimeStr = formatTime(currentHour)
-    currentHour += duration
-    const endTimeStr = formatTime(currentHour)
+    while(taskDurationLeft > 0.01) { // 0.01 threshold for floating point precision
+      const timeUntilNextBreak = breakFreq - timeSinceLastBreak
+      const chunkDuration = Math.min(taskDurationLeft, timeUntilNextBreak)
 
-    timeline.push({
-      type: 'study',
-      title: task.title,
-      subject: task.subject,
-      startTimeStr,
-      endTimeStr,
-      durationHrs: duration,
-      taskId: task.id
-    })
-
-    studyHoursScheduled += duration
-
-    // Insert 15-minute break after each study block (break time is extra, not deducted from study budget)
-    // Only add a break if we are not at the daily study limit yet
-    if (studyHoursScheduled < maxStudyLimit) {
-      const breakStart = formatTime(currentHour)
-      currentHour += 0.25 // 15 mins break
-      const breakEnd = formatTime(currentHour)
-
-      timeline.push({
-        type: 'break',
-        title: '15-Minute Rest Break',
-        subject: '',
-        startTimeStr: breakStart,
-        endTimeStr: breakEnd,
-        durationHrs: 0.25
-      })
+      if (chunkDuration > 0.01) {
+        const startTimeStr = formatTime(currentHour)
+        currentHour += chunkDuration
+        const endTimeStr = formatTime(currentHour)
+        
+        timeline.push({
+          type: 'study',
+          title: task.title,
+          subject: task.subject,
+          startTimeStr,
+          endTimeStr,
+          durationHrs: chunkDuration,
+          taskId: task.id,
+          isEstimatedFallback: isEstimated
+        })
+        
+        taskDurationLeft -= chunkDuration
+        timeSinceLastBreak += chunkDuration
+        studyHoursScheduled += chunkDuration
+      } else {
+        // Fallback to prevent infinite loop if chunkDuration is NaN or <= 0.01
+        break
+      }
+      
+      // Trigger break if it's time
+      if (Math.abs(timeSinceLastBreak - breakFreq) < 0.01 && studyHoursScheduled < maxStudyLimit) {
+        const breakStart = formatTime(currentHour)
+        currentHour += breakDur
+        const breakEnd = formatTime(currentHour)
+        
+        timeline.push({
+          type: 'break',
+          title: `${settings.value.breakDuration}-Minute Rest Break`,
+          subject: '',
+          startTimeStr: breakStart,
+          endTimeStr: breakEnd,
+          durationHrs: breakDur
+        })
+        timeSinceLastBreak = 0
+      }
+      
+      if (studyHoursScheduled >= maxStudyLimit) break
     }
   }
 
@@ -327,10 +426,23 @@ const dailyTimeline = computed(() => {
   return timeline
 })
 
-// Compute weekly planner grid for next 7 days
+// Format a deadline time for display in the weekly grid (e.g. "6:00 PM" or "No time set")
+const formatDeadlineTime = (task) => {
+  if (task.deadlineTime) {
+    const [h, m] = task.deadlineTime.split(':')
+    const hour = parseInt(h, 10)
+    const min = m || '00'
+    const period = hour >= 12 ? 'PM' : 'AM'
+    const displayH = hour % 12 === 0 ? 12 : hour % 12
+    return `${displayH}:${min} ${period}`
+  }
+  return 'No time set'
+}
+
+// Compute weekly planner grid — tasks placed directly on their deadline day
 const weeklySchedule = computed(() => {
   const startDayPref = settings.value.weeklyStartDay
-  const sortedTasks = getSortedPendingTasks()
+  const sortedTasks = getSortedPendingTasks(false) // false = all pending tasks (no today filter)
 
   // Generate 7 days starting from today, aligning to the start day preference if possible,
   // or simple 7-day sliding window from today.
@@ -356,60 +468,27 @@ const weeklySchedule = computed(() => {
     scheduleDays.push({
       name: daysOfWeek[d.getDay()],
       date: d,
-      blocks: [],
-      totalHrs: 0
+      tasks: []
     })
   }
 
-  // Heuristic Study Allocator:
-  // Allocate task hours across the week.
-  // Each day has a capacity equal to dailyHourLimit.
-  // Tasks must be scheduled on or before their deadline date.
-  
-  // Clone task requirements to keep track of remaining hours to allocate
-  const tasksToSchedule = sortedTasks.map(t => ({
-    id: t.id,
-    title: t.title,
-    subject: t.subject,
-    remainingHrs: t.estimatedHours,
-    deadline: new Date(t.deadline)
-  }))
+  // Place each pending task directly on its deadline day (no redistribution, no cap)
+  for (const task of sortedTasks) {
+    const deadline = getTaskDeadlineDate(task)
+    if (!deadline) continue
 
-  for (const task of tasksToSchedule) {
-    // We attempt to schedule this task's hours.
-    // We look at the days from today (or the start of the week) up to the task's deadline.
-    // If a day is past the deadline, we can't schedule it there.
-    // We prioritize distributing the hours as early as possible.
-    
-    for (const day of scheduleDays) {
-      if (task.remainingHrs <= 0) break
+    const deadlineDayStr = deadline.toDateString()
+    const targetDay = scheduleDays.find(d => d.date.toDateString() === deadlineDayStr)
 
-      // Skip past days or days after the deadline
-      const dayDate = new Date(day.date)
-      dayDate.setHours(23, 59, 59, 999) // include the deadline day
-      if (dayDate > task.deadline || isPastDay(day.date)) continue
-
-      const dayCapacity = settings.value.dailyHourLimit - day.totalHrs
-      if (dayCapacity <= 0) continue
-
-      const duration = Math.min(task.remainingHrs, dayCapacity)
-      if (duration <= 0) continue
-
-      day.blocks.push({
-        type: 'study',
+    if (targetDay) {
+      targetDay.tasks.push({
         title: task.title,
         subject: task.subject,
-        durationHrs: duration
+        deadlineTimeStr: formatDeadlineTime(task)
       })
-
-      day.totalHrs += duration
-      task.remainingHrs -= duration
     }
   }
 
-  // Post-process: Insert 15-minute rest breaks between scheduled blocks in the daily schedules if needed,
-  // but for the weekly summary card, keeping it simplified to "Study Blocks" is standard and readable.
-  
   return scheduleDays
 })
 

@@ -9,7 +9,7 @@
           <input 
             v-model="searchQuery" 
             type="text" 
-            placeholder="Search by title..." 
+            placeholder="       Search by title..." 
             class="premium-input w-full sm:w-64 pl-8"
           />
           <Search class="w-4 h-4 absolute left-2.5 top-3 text-[var(--color-text-muted)]" />
@@ -19,14 +19,6 @@
         <select v-model="filterSubject" class="premium-input text-xs font-display">
           <option value="">All Subjects</option>
           <option v-for="subj in uniqueSubjects" :key="subj" :value="subj">{{ subj }}</option>
-        </select>
-
-        <!-- Priority Filter -->
-        <select v-model="filterPriority" class="premium-input text-xs font-display">
-          <option value="">All Priorities</option>
-          <option value="High">High Priority</option>
-          <option value="Medium">Medium Priority</option>
-          <option value="Low">Low Priority</option>
         </select>
 
         <!-- Status Filter -->
@@ -49,7 +41,7 @@
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="border-b border-[var(--color-border)] bg-[var(--color-bg-panel)] text-xs font-display text-[var(--color-text-muted)] uppercase tracking-wider">
-              <th class="p-3 w-10 text-center">Status</th>
+              <th class="p-3 w-10 text-center">Done</th>
               <th @click="toggleSort('title')" class="p-3 cursor-pointer hover:text-[var(--color-text-h)] select-none">
                 <div class="flex items-center gap-1">
                   Name
@@ -68,18 +60,14 @@
                   <ArrowUpDown class="w-3.5 h-3.5 shrink-0" />
                 </div>
               </th>
-              <th @click="toggleSort('priority')" class="p-3 cursor-pointer hover:text-[var(--color-text-h)] select-none w-28">
-                <div class="flex items-center gap-1">
-                  Priority
-                  <ArrowUpDown class="w-3.5 h-3.5 shrink-0" />
-                </div>
-              </th>
-              <th @click="toggleSort('deadline')" class="p-3 cursor-pointer hover:text-[var(--color-text-h)] select-none w-32">
+              <th class="p-3 w-28">Priority</th>
+              <th @click="toggleSort('deadline')" class="p-3 cursor-pointer hover:text-[var(--color-text-h)] select-none w-36">
                 <div class="flex items-center gap-1">
                   Deadline
                   <ArrowUpDown class="w-3.5 h-3.5 shrink-0" />
                 </div>
               </th>
+              <th class="p-3 w-28 text-center">Today's Plan</th>
               <th class="p-3 text-right w-20">Actions</th>
             </tr>
           </thead>
@@ -117,26 +105,55 @@
                 </span>
               </td>
 
-              <!-- Estimated hours -->
-              <td class="p-3 font-mono text-xs">
-                {{ task.estimatedHours }} hrs
+              <!-- Hours -->
+              <td class="p-3">
+                <span class="text-xs font-mono">
+                  {{ task.estimatedHours ? `${task.estimatedHours} hrs` : '—' }}
+                </span>
               </td>
 
-              <!-- Priority badge -->
+              <!-- Auto-Priority Badge -->
               <td class="p-3">
                 <span 
-                  class="px-2 py-0.5 text-xs font-medium border"
-                  :class="getPriorityClasses(task.priority)"
+                  class="text-[9px] font-mono px-2 py-0.5 border uppercase"
+                  :class="getAutoPriorityClasses(task)"
                 >
-                  {{ task.priority }}
+                  {{ getAutoPriority(task) }}
                 </span>
               </td>
 
-              <!-- Deadline formatted -->
-              <td class="p-3 font-mono text-xs text-[var(--color-text-muted)]">
-                <span :class="{ 'text-red-500 font-semibold': isOverdue(task) }">
-                  {{ formatDate(task.deadline) }}
-                </span>
+              <!-- Deadline -->
+              <td class="p-3">
+                <div class="flex flex-col">
+                  <span 
+                    class="text-xs font-mono"
+                    :class="{ 'text-red-500 font-semibold': isOverdue(task) }"
+                  >
+                    {{ formatDateTime(task) }}
+                  </span>
+                  <span v-if="isOverdue(task)" class="text-[9px] uppercase text-red-500 font-bold mt-0.5 tracking-wider">
+                    Overdue
+                  </span>
+                </div>
+              </td>
+
+              <!-- Today's Plan Toggle -->
+              <td class="p-3 text-center">
+                <button
+                  v-if="task.status === 'pending'"
+                  @click="toggleTodayPlan(task.id)"
+                  class="w-9 h-5 rounded-full relative transition-colors duration-200 focus:outline-none border"
+                  :class="todayPlan.has(task.id) 
+                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)]' 
+                    : 'bg-transparent border-[var(--color-border)]'"
+                  :title="todayPlan.has(task.id) ? 'Remove from today\'s plan' : 'Add to today\'s plan'"
+                >
+                  <span
+                    class="absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform duration-200"
+                    :class="todayPlan.has(task.id) ? 'translate-x-4' : 'translate-x-0'"
+                  ></span>
+                </button>
+                <span v-else class="text-[10px] text-[var(--color-text-muted)] font-mono">—</span>
               </td>
 
               <!-- Actions -->
@@ -162,7 +179,7 @@
 
             <!-- Empty State -->
             <tr v-if="filteredTasks.length === 0">
-              <td colspan="7" class="p-8 text-center text-xs text-[var(--color-text-muted)] font-mono">
+              <td colspan="8" class="p-8 text-center text-xs text-[var(--color-text-muted)] font-mono">
                 No matching tasks found.
               </td>
             </tr>
@@ -233,13 +250,14 @@
             <!-- Estimated Hours -->
             <div class="flex flex-col gap-1">
               <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
-                Estimated Hours
+                Estimated Hours <span class="normal-case font-normal">(optional)</span>
               </label>
               <input 
                 v-model.number="form.estimatedHours" 
                 type="number" 
                 step="0.5"
                 min="0.5"
+                placeholder="e.g. 2"
                 class="premium-input text-xs font-mono"
                 :class="{ 'border-red-500 focus:border-red-500': errors.estimatedHours }"
               />
@@ -247,39 +265,31 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <!-- Priority -->
-            <div class="flex flex-col gap-1">
-              <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
-                Priority
-              </label>
-              <select 
-                v-model="form.priority" 
-                class="premium-input text-xs font-display"
-                :class="{ 'border-red-500 focus:border-red-500': errors.priority }"
-              >
-                <option value="">Select Priority</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-              <span v-if="errors.priority" class="text-[10px] text-red-500 font-mono">{{ errors.priority }}</span>
-            </div>
-
-            <!-- Deadline -->
-            <div class="flex flex-col gap-1">
-              <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
-                Deadline
-              </label>
+          <!-- Deadline Date & Time (full width) -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
+              Deadline
+            </label>
+            <div class="flex gap-2">
               <input 
-                v-model="form.deadline" 
+                v-model="form.deadlineDate" 
                 type="date" 
-                class="premium-input text-xs font-mono"
-                :class="{ 'border-red-500 focus:border-red-500': errors.deadline }"
+                class="premium-input text-xs font-mono flex-1"
+                :class="{ 'border-red-500 focus:border-red-500': errors.deadlineDate }"
               />
-              <span v-if="errors.deadline" class="text-[10px] text-red-500 font-mono">{{ errors.deadline }}</span>
+              <input 
+                v-model="form.deadlineTime" 
+                type="time" 
+                class="premium-input text-xs font-mono w-28"
+              />
             </div>
+            <span v-if="errors.deadlineDate" class="text-[10px] text-red-500 font-mono">{{ errors.deadlineDate }}</span>
           </div>
+
+          <!-- Auto-priority info note -->
+          <p class="text-[10px] font-mono text-[var(--color-text-muted)] italic">
+            ⓘ Priority is auto-calculated from deadline: ≥5 days = Low, 3–4 days = Medium, 1–2 days = High, overdue = Overdue
+          </p>
 
           <!-- Buttons -->
           <div class="flex items-center justify-end gap-2 pt-4 border-t border-[var(--color-border)] mt-4">
@@ -313,41 +323,83 @@ const addTask = inject('addTask')
 const updateTask = inject('updateTask')
 const deleteTask = inject('deleteTask')
 
-// Filters state
+// ── Today's Plan set (injected from App.vue) ─────────────────────────────
+const todayPlanIds = inject('todayPlan')
+const todayPlan = todayPlanIds
+
+const toggleTodayPlan = (id) => {
+  const next = new Set(todayPlanIds.value)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  todayPlanIds.value = next
+}
+
+// ── Auto Priority ─────────────────────────────────────────────────────────
+const getAutoPriority = (task) => {
+  if (task.status === 'completed') return 'Done'
+  if (!task.deadline) return 'Low'
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const [y, m, d] = task.deadline.split('-')
+  const deadline = new Date(Number(y), Number(m) - 1, Number(d))
+  deadline.setHours(0, 0, 0, 0)
+
+  const diffMs = deadline - today
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return 'Overdue'
+  if (diffDays <= 2) return 'High'
+  if (diffDays <= 4) return 'Medium'
+  return 'Low'
+}
+
+const getAutoPriorityClasses = (task) => {
+  const p = getAutoPriority(task)
+  if (p === 'Overdue') return 'border-zinc-700/40 bg-zinc-800/60 text-zinc-300 font-semibold'
+  if (p === 'High')    return 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold'
+  if (p === 'Medium')  return 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold'
+  return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
+}
+
+// ── Filters state ─────────────────────────────────────────────────────────
 const searchQuery = ref('')
 const filterSubject = ref('')
-const filterPriority = ref('')
 const filterStatus = ref('')
 
-// Sorting state
+// ── Sorting state ─────────────────────────────────────────────────────────
 const sortColumn = ref('deadline')
 const sortAscending = ref(true)
 
-// Modal state
+// ── Modal state ───────────────────────────────────────────────────────────
 const modal = ref({
   show: false,
-  mode: 'create', // 'create' | 'edit'
+  mode: 'create',
   taskId: null
 })
 
-// Form state
+// ── Form state ────────────────────────────────────────────────────────────
 const form = ref({
   title: '',
   subject: '',
-  estimatedHours: 2,
-  priority: '',
-  deadline: ''
+  estimatedHours: null,
+  deadlineDate: '',
+  deadlineTime: ''
 })
 
 const errors = ref({})
 
-// Unique list of subjects extracted from existing tasks
+// ── Unique subjects ───────────────────────────────────────────────────────
 const uniqueSubjects = computed(() => {
   const list = tasks.value.map(t => t.subject)
   return [...new Set(list)].filter(Boolean).sort()
 })
 
-// Toggle sort column
+// ── Sort helpers ──────────────────────────────────────────────────────────
 const toggleSort = (col) => {
   if (sortColumn.value === col) {
     sortAscending.value = !sortAscending.value
@@ -357,53 +409,35 @@ const toggleSort = (col) => {
   }
 }
 
-// Map Priority sorting values
-const priorityWeight = {
-  High: 3,
-  Medium: 2,
-  Low: 1
-}
-
-// Compute filtered & sorted tasks
+// ── Filtered & sorted tasks ───────────────────────────────────────────────
 const filteredTasks = computed(() => {
   let list = [...tasks.value]
 
-  // Apply search query
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim()
     list = list.filter(t => t.title.toLowerCase().includes(q))
   }
 
-  // Apply subject filter
   if (filterSubject.value) {
     list = list.filter(t => t.subject === filterSubject.value)
   }
 
-  // Apply priority filter
-  if (filterPriority.value) {
-    list = list.filter(t => t.priority === filterPriority.value)
-  }
-
-  // Apply status filter
   if (filterStatus.value) {
     list = list.filter(t => t.status === filterStatus.value)
   }
 
-  // Sort results
   list.sort((a, b) => {
+    // Completed tasks always at the bottom
+    if (a.status !== b.status) {
+      return a.status === 'completed' ? 1 : -1
+    }
+
     let fieldA = a[sortColumn.value]
     let fieldB = b[sortColumn.value]
 
-    // Handle priority mapping
-    if (sortColumn.value === 'priority') {
-      fieldA = priorityWeight[fieldA] || 0
-      fieldB = priorityWeight[fieldB] || 0
-    }
-
-    // Number or string comparisons
     let comparison = 0
     if (typeof fieldA === 'string') {
-      comparison = fieldA.localeCompare(fieldB)
+      comparison = (fieldA || '').localeCompare(fieldB || '')
     } else {
       comparison = (fieldA || 0) - (fieldB || 0)
     }
@@ -414,80 +448,80 @@ const filteredTasks = computed(() => {
   return list
 })
 
-// Utility styling classes for priorities
-const getPriorityClasses = (prio) => {
-  if (prio === 'High') {
-    return 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold'
-  }
-  if (prio === 'Medium') {
-    return 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold'
-  }
-  return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
-}
-
-// Date parsing formatting
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  const [y, m, d] = dateStr.split('-')
-  const dateObj = new Date(y, m - 1, d)
-  return dateObj.toLocaleDateString(undefined, { 
+// ── Date formatting ───────────────────────────────────────────────────────
+const formatDateTime = (task) => {
+  if (!task.deadline) return '-'
+  const [y, m, d] = task.deadline.split('-')
+  const dateObj = new Date(Number(y), Number(m) - 1, Number(d))
+  const dateStr = dateObj.toLocaleDateString(undefined, { 
     month: 'short', 
     day: 'numeric', 
     year: 'numeric' 
   })
+  
+  if (task.deadlineTime) {
+    const [h, min] = task.deadlineTime.split(':')
+    const timeObj = new Date()
+    timeObj.setHours(parseInt(h, 10))
+    timeObj.setMinutes(parseInt(min, 10))
+    const timeStr = timeObj.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    return `${dateStr} at ${timeStr}`
+  }
+  
+  return dateStr
 }
 
-// Identify past/overdue deadlines (only if task is pending)
+// ── Overdue check ─────────────────────────────────────────────────────────
 const isOverdue = (task) => {
   if (task.status === 'completed' || !task.deadline) return false
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
   const [y, m, d] = task.deadline.split('-')
-  const deadlineDate = new Date(y, m - 1, d)
-  deadlineDate.setHours(0, 0, 0, 0)
+  const deadlineDate = new Date(Number(y), Number(m) - 1, Number(d))
+  if (task.deadlineTime) {
+    const [h, min] = task.deadlineTime.split(':')
+    deadlineDate.setHours(parseInt(h, 10), parseInt(min, 10), 0, 0)
+  } else {
+    deadlineDate.setHours(23, 59, 59, 999)
+  }
   return deadlineDate < today
 }
 
-// Handlers for task actions
+// ── Task actions ──────────────────────────────────────────────────────────
 const toggleTaskStatus = (task) => {
-  const updated = {
-    ...task,
-    status: task.status === 'completed' ? 'pending' : 'completed'
-  }
-  updateTask(updated)
+  updateTask({ ...task, status: task.status === 'completed' ? 'pending' : 'completed' })
 }
 
 const handleDelete = (id) => {
+  // Also remove from today's plan if present
+  if (todayPlanIds.value.has(id)) {
+    const next = new Set(todayPlanIds.value)
+    next.delete(id)
+    todayPlanIds.value = next
+  }
   deleteTask(id)
 }
 
-// Modal Form methods
+// ── Modal helpers ─────────────────────────────────────────────────────────
 const openCreateModal = () => {
-  modal.value.show = true
-  modal.value.mode = 'create'
-  modal.value.taskId = null
-  
+  modal.value = { show: true, mode: 'create', taskId: null }
   form.value = {
     title: '',
     subject: '',
-    estimatedHours: 2,
-    priority: 'Medium',
-    deadline: new Date().toISOString().split('T')[0]
+    estimatedHours: null,
+    deadlineDate: new Date().toISOString().split('T')[0],
+    deadlineTime: '23:59'
   }
   errors.value = {}
 }
 
 const openEditModal = (task) => {
-  modal.value.show = true
-  modal.value.mode = 'edit'
-  modal.value.taskId = task.id
-  
+  modal.value = { show: true, mode: 'edit', taskId: task.id }
   form.value = {
     title: task.title,
     subject: task.subject,
-    estimatedHours: task.estimatedHours,
-    priority: task.priority,
-    deadline: task.deadline
+    estimatedHours: task.estimatedHours || null,
+    deadlineDate: task.deadline,
+    deadlineTime: task.deadlineTime || ''
   }
   errors.value = {}
 }
@@ -497,6 +531,7 @@ const closeModal = () => {
   modal.value.taskId = null
 }
 
+// ── Validation ────────────────────────────────────────────────────────────
 const validateForm = () => {
   errors.value = {}
   
@@ -510,45 +545,44 @@ const validateForm = () => {
     errors.value.subject = 'Subject is required'
   }
   
-  if (!form.value.estimatedHours || form.value.estimatedHours <= 0) {
-    errors.value.estimatedHours = 'Hours must be a positive number'
+  if (form.value.estimatedHours !== null && form.value.estimatedHours !== '' && form.value.estimatedHours < 0) {
+    errors.value.estimatedHours = 'Hours cannot be negative'
   }
   
-  if (!form.value.priority) {
-    errors.value.priority = 'Priority is required'
-  }
-  
-  if (!form.value.deadline) {
-    errors.value.deadline = 'Deadline is required'
+  if (!form.value.deadlineDate) {
+    errors.value.deadlineDate = 'Deadline date is required'
   } else {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const [y, m, d] = form.value.deadline.split('-')
-    const deadlineDate = new Date(y, m - 1, d)
+    const [y, m, d] = form.value.deadlineDate.split('-')
+    const deadlineDate = new Date(Number(y), Number(m) - 1, Number(d))
     deadlineDate.setHours(0, 0, 0, 0)
-    
-    // In edit mode we allow keeping the same past deadline, but in create mode we prevent past deadlines
     if (modal.value.mode === 'create' && deadlineDate < today) {
-      errors.value.deadline = 'Deadline cannot be in the past'
+      errors.value.deadlineDate = 'Deadline cannot be in the past'
     }
   }
   
   return Object.keys(errors.value).length === 0
 }
 
+// ── Submit ────────────────────────────────────────────────────────────────
 const submitForm = () => {
   if (!validateForm()) return
   
+  const taskPayload = {
+    title: form.value.title,
+    subject: form.value.subject,
+    estimatedHours: form.value.estimatedHours || 0,
+    deadline: form.value.deadlineDate,
+    deadlineTime: form.value.deadlineTime
+  }
+  
   if (modal.value.mode === 'create') {
-    addTask({ ...form.value })
+    addTask(taskPayload)
   } else {
-    // Edit Mode
     const existing = tasks.value.find(t => t.id === modal.value.taskId)
     if (existing) {
-      updateTask({
-        ...existing,
-        ...form.value
-      })
+      updateTask({ ...existing, ...taskPayload })
     }
   }
   

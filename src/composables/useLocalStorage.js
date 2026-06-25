@@ -62,6 +62,9 @@ export const defaultTasks = [
 ]
 
 export const defaultPlannerSettings = {
+  studyStartTime: '09:00',
+  breakDuration: 15,
+  breakFrequency: 2,
   dailyHourLimit: 6,
   weeklyStartDay: 'Monday',
   planningStrategy: 'priority' // 'priority' | 'deadline' | 'balanced'

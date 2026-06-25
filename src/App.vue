@@ -111,6 +111,9 @@ watch(currentTheme, (newTheme) => {
 const tasks = useLocalStorage('studyflow_tasks', defaultTasks)
 const plannerSettings = useLocalStorage('studyflow_planner_settings', defaultPlannerSettings)
 
+// Today's Plan — Set of task IDs selected by user in Task Manager
+const todayPlan = ref(new Set())
+
 // Toast System State
 const toast = ref({
   visible: false,
@@ -202,6 +205,7 @@ provide('addTask', addTask)
 provide('updateTask', updateTask)
 provide('deleteTask', deleteTask)
 provide('triggerToast', triggerToast)
+provide('todayPlan', todayPlan)
 
 </script>
 

@@ -28,16 +28,16 @@
                 >
                   <span
                     class="w-1.5 h-1.5 rounded-full shrink-0"
-                    :class="getNotifPriorityDot(task.priority)"
+                    :class="getNotifPriorityDot(getAutoPriority(task))"
                   ></span>
                   <span class="text-[11px] font-display font-semibold notif-task-name truncate max-w-[180px]">
                     {{ task.title }}
                   </span>
                   <span
                     class="text-[9px] font-mono px-1 border uppercase font-bold shrink-0"
-                    :class="getNotifPriorityBadge(task.priority)"
+                    :class="getNotifPriorityBadge(getAutoPriority(task))"
                   >
-                    {{ task.priority }}
+                    {{ getAutoPriority(task) }}
                   </span>
                 </div>
               </div>
@@ -174,15 +174,15 @@
                   {{ task.title }}
                 </span>
                 <span 
-                  class="text-[9px] font-mono px-1 border uppercase font-semibold text-rose-500 border-rose-500/20 bg-rose-500/10 shrink-0"
-                  v-if="task.priority === 'High'"
+                  class="text-[9px] font-mono px-1 border uppercase font-semibold shrink-0"
+                  :class="getAutoPriorityClasses(task)"
                 >
-                  High
+                  {{ getAutoPriority(task) }}
                 </span>
               </div>
               <div class="flex items-center justify-between text-[10px] font-mono text-[var(--color-text-muted)]">
                 <span>{{ task.subject }}</span>
-                <span>Due: {{ formatDate(task.deadline) }}</span>
+                <span>Due: {{ formatDateTime(task) }}</span>
               </div>
             </div>
 
@@ -254,6 +254,29 @@ watch(dueTodayTasks, (newVal, oldVal) => {
     notifDismissed.value = false
   }
 })
+
+const getAutoPriority = (task) => {
+  if (task.status === 'completed') return 'Done'
+  if (!task.deadline) return 'Low'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const [y, m, d] = task.deadline.split('-')
+  const deadline = new Date(Number(y), Number(m) - 1, Number(d))
+  deadline.setHours(0, 0, 0, 0)
+  const diffDays = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
+  if (diffDays < 0) return 'Overdue'
+  if (diffDays <= 2) return 'High'
+  if (diffDays <= 4) return 'Medium'
+  return 'Low'
+}
+
+const getAutoPriorityClasses = (task) => {
+  const p = getAutoPriority(task)
+  if (p === 'Overdue') return 'border-zinc-700/40 bg-zinc-800/60 text-zinc-300'
+  if (p === 'High')    return 'border-rose-500/20 bg-rose-500/10 text-rose-500'
+  if (p === 'Medium')  return 'border-amber-500/20 bg-amber-500/10 text-amber-500'
+  return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+}
 
 const getNotifPriorityDot = (priority) => {
   if (priority === 'High') return 'bg-rose-500'
@@ -381,11 +404,21 @@ const uniqueSubjectsCount = computed(() => {
 })
 
 // Format date nicely
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  const [y, m, d] = dateStr.split('-')
+const formatDateTime = (task) => {
+  if (!task.deadline) return '-'
+  const [y, m, d] = task.deadline.split('-')
   const dateObj = new Date(y, m - 1, d)
-  return dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  const dateStr = dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  
+  if (task.deadlineTime) {
+    const [h, min] = task.deadlineTime.split(':')
+    const timeObj = new Date()
+    timeObj.setHours(parseInt(h, 10))
+    timeObj.setMinutes(parseInt(min, 10))
+    const timeStr = timeObj.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    return `${dateStr} at ${timeStr}`
+  }
+  return dateStr
 }
 
 // Canvas references for Charts
@@ -457,33 +490,29 @@ const renderCharts = () => {
     })
   }
 
-  // 2. Priority Distribution Chart
+  // 2. Priority Distribution Chart (auto-calculated from deadlines)
   if (priorityChartInstance) priorityChartInstance.destroy()
   if (priorityCanvas.value && totalTasks.value > 0) {
-    const priorityMap = { High: 0, Medium: 0, Low: 0 }
+    const priorityMap = { High: 0, Medium: 0, Low: 0, Overdue: 0 }
     tasks.value.forEach(t => {
-      if (priorityMap[t.priority] !== undefined) {
-        priorityMap[t.priority] += 1
-      }
+      const p = getAutoPriority(t)
+      if (p in priorityMap) priorityMap[p] += 1
     })
 
     priorityChartInstance = new Chart(priorityCanvas.value, {
       type: 'bar',
       data: {
-        labels: ['High', 'Medium', 'Low'],
+        labels: ['High', 'Medium', 'Low', 'Overdue'],
         datasets: [{
           label: 'Tasks',
-          data: [priorityMap.High, priorityMap.Medium, priorityMap.Low],
+          data: [priorityMap.High, priorityMap.Medium, priorityMap.Low, priorityMap.Overdue],
           backgroundColor: [
-            'rgba(244, 63, 94, 0.75)',  // High Red
-            'rgba(245, 158, 11, 0.75)', // Medium Amber
-            'rgba(16, 185, 129, 0.75)'  // Low Emerald
+            'rgba(244, 63, 94, 0.75)',
+            'rgba(245, 158, 11, 0.75)',
+            'rgba(16, 185, 129, 0.75)',
+            'rgba(39, 39, 42, 0.85)'
           ],
-          borderColor: [
-            '#f43f5e',
-            '#f59e0b',
-            '#10b981'
-          ],
+          borderColor: ['#f43f5e', '#f59e0b', '#10b981', '#52525b'],
           borderWidth: 1
         }]
       },
