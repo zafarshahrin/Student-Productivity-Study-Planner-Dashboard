@@ -55,6 +55,59 @@
         </div>
       </div>
     </transition>
+
+    <!-- ── Overdue Tasks Notification Banner ── -->
+    <transition name="notif-slide">
+      <div
+        v-if="overdueTasksList.length > 0 && !overdueDismissed"
+        class="overdue-banner relative overflow-hidden border rounded-sm p-4"
+      >
+        <!-- Red pulsing left strip -->
+        <div class="overdue-accent-bar"></div>
+
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-start gap-3 flex-1 min-w-0">
+            <!-- Alert icon -->
+            <div class="overdue-icon-wrap shrink-0 mt-0.5">
+              <AlertTriangle class="w-4 h-4 overdue-icon" />
+            </div>
+
+            <div class="min-w-0">
+              <p class="text-xs font-display font-bold uppercase tracking-widest overdue-title mb-1">
+                ⚠ {{ overdueTasksList.length }} Overdue Task{{ overdueTasksList.length > 1 ? 's' : '' }} — Action Required
+              </p>
+              <p class="text-[10px] font-mono text-red-400/80 mb-2">
+                These tasks missed their deadline. Complete or reschedule them immediately.
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="task in overdueTasksList"
+                  :key="task.id"
+                  class="overdue-task-chip flex items-center gap-1.5"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 animate-pulse"></span>
+                  <span class="text-[11px] font-display font-semibold text-red-100 truncate max-w-[180px]">
+                    {{ task.title }}
+                  </span>
+                  <span class="text-[9px] font-mono px-1.5 py-px border border-red-500/40 bg-red-500/20 text-red-300 uppercase font-bold shrink-0">
+                    {{ getDaysOverdue(task) }}d overdue
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dismiss -->
+          <button
+            @click="overdueDismissed = true"
+            class="overdue-dismiss shrink-0 p-1 rounded-sm"
+            title="Dismiss"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </transition>
     <!-- Summary Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total Tasks -->
@@ -123,34 +176,111 @@
 
     <!-- Charts Area & Upcoming Deadlines Grid -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <!-- Charts Block -->
-      <div class="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Subject Doughnut -->
-        <div class="premium-card p-4 flex flex-col justify-between min-h-[300px]">
-          <div>
-            <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
-              Subject Distribution (Tasks)
+      <!-- Combined Charts Block (full-width on xl) -->
+      <div class="xl:col-span-2">
+        <div class="premium-card p-4 flex flex-col min-h-[380px]">
+
+          <!-- Card Header: title + tab switcher -->
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)]">
+              Task Analytics
             </h3>
-          </div>
-          <div class="relative flex-1 flex items-center justify-center p-2">
-            <canvas ref="subjectCanvas" class="max-h-[220px] max-w-[220px]"></canvas>
-            <div v-if="uniqueSubjectsCount === 0" class="absolute inset-0 flex items-center justify-center bg-[var(--color-bg-card)] text-xs font-mono">
-              No task data available.
+
+            <!-- Tab Toggle -->
+            <div class="flex items-center border border-[var(--color-border)] rounded-sm overflow-hidden">
+              <button
+                @click="setChartTab('subject')"
+                class="px-3 py-1.5 text-[10px] font-display font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                :class="activeChartTab === 'subject'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-bg)]'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-h)] hover:bg-[var(--color-bg-panel)]'"
+              >
+                Subject
+              </button>
+              <button
+                @click="setChartTab('priority')"
+                class="px-3 py-1.5 text-[10px] font-display font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border-l border-[var(--color-border)]"
+                :class="activeChartTab === 'priority'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-bg)]'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-h)] hover:bg-[var(--color-bg-panel)]'"
+              >
+                Priority
+              </button>
             </div>
           </div>
-        </div>
 
-        <!-- Priority Bar -->
-        <div class="premium-card p-4 flex flex-col justify-between min-h-[300px]">
-          <div>
-            <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
-              Priority Weight Distribution
-            </h3>
+          <!-- Empty State -->
+          <div v-if="totalTasks === 0" class="flex-1 flex items-center justify-center border border-dashed border-[var(--color-border)] text-xs font-mono text-[var(--color-text-muted)]">
+            No task data available.
           </div>
-          <div class="relative flex-1 flex items-center justify-center p-2">
-            <canvas ref="priorityCanvas" class="max-h-[220px]"></canvas>
-            <div v-if="totalTasks === 0" class="absolute inset-0 flex items-center justify-center bg-[var(--color-bg-card)] text-xs font-mono">
-              No task data available.
+
+          <!-- Chart + Legend layout -->
+          <div v-else class="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
+
+            <!-- Canvas area -->
+            <div class="relative flex items-center justify-center flex-shrink-0" :class="activeChartTab === 'subject' ? 'md:w-56 h-56 md:h-auto' : 'flex-1'">
+              <!-- Subject doughnut canvas -->
+              <canvas
+                v-show="activeChartTab === 'subject'"
+                ref="subjectCanvas"
+                class="max-h-[220px] max-w-[220px]"
+              ></canvas>
+              <!-- Priority bar canvas -->
+              <canvas
+                v-show="activeChartTab === 'priority'"
+                ref="priorityCanvas"
+                class="max-h-[220px] w-full"
+              ></canvas>
+            </div>
+
+            <!-- Legend panel -->
+            <div class="flex-1 flex flex-col justify-center gap-2 min-w-0">
+
+              <!-- Subject legend -->
+              <template v-if="activeChartTab === 'subject'">
+                <p class="text-[10px] font-mono text-[var(--color-text-muted)] mb-1 uppercase tracking-wider">By Subject</p>
+                <div
+                  v-for="(item, idx) in subjectLegend"
+                  :key="item.label"
+                  class="flex items-center gap-2.5 p-2 border border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-bg-panel)]/40 transition-all rounded-sm group"
+                >
+                  <span class="w-2.5 h-2.5 rounded-sm shrink-0" :style="{ background: item.color }"></span>
+                  <span class="text-xs font-display font-medium text-[var(--color-text-h)] truncate flex-1">{{ item.label }}</span>
+                  <span class="text-[10px] font-mono text-[var(--color-text-muted)] shrink-0">{{ item.count }} task{{ item.count !== 1 ? 's' : '' }}</span>
+                  <span
+                    class="text-[9px] font-mono font-bold px-1.5 py-0.5 border shrink-0"
+                    :style="{ borderColor: item.color + '40', background: item.color + '15', color: item.color }"
+                  >{{ item.pct }}%</span>
+                </div>
+              </template>
+
+              <!-- Priority legend -->
+              <template v-else>
+                <p class="text-[10px] font-mono text-[var(--color-text-muted)] mb-1 uppercase tracking-wider">By Priority</p>
+                <div
+                  v-for="item in priorityLegend"
+                  :key="item.label"
+                  class="flex items-center gap-2.5 p-2 border border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-bg-panel)]/40 transition-all rounded-sm"
+                >
+                  <span class="w-2.5 h-2.5 rounded-sm shrink-0" :style="{ background: item.color }"></span>
+                  <span class="text-xs font-display font-medium flex-1" :style="{ color: item.color }">{{ item.label }}</span>
+                  <span class="text-[10px] font-mono text-[var(--color-text-muted)] shrink-0">{{ item.count }} task{{ item.count !== 1 ? 's' : '' }}</span>
+                  <!-- Mini progress bar -->
+                  <div class="w-16 h-1.5 bg-[var(--color-bg-panel)] rounded-full overflow-hidden shrink-0">
+                    <div
+                      class="h-full rounded-full transition-all duration-500"
+                      :style="{ width: item.pct + '%', background: item.color }"
+                    ></div>
+                  </div>
+                  <span class="text-[9px] font-mono w-7 text-right shrink-0 text-[var(--color-text-muted)]">{{ item.pct }}%</span>
+                </div>
+
+                <!-- Divider + summary line -->
+                <div class="mt-2 pt-2 border-t border-[var(--color-border)] flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-[var(--color-text-muted)]">Total pending tasks</span>
+                  <span class="text-xs font-display font-bold text-[var(--color-text-h)]">{{ pendingTasksCount }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -191,6 +321,74 @@
               All tasks completed!
             </div>
           </div>
+        </div>
+
+        <!-- ── Past Due Tasks Card ── -->
+        <div class="overdue-card border rounded-sm p-4 relative overflow-hidden">
+          <!-- Pulsing red left strip -->
+          <div class="overdue-accent-bar"></div>
+
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <div class="overdue-icon-wrap">
+                <AlertTriangle class="w-3.5 h-3.5 overdue-icon" />
+              </div>
+              <h3 class="text-xs uppercase font-display font-bold tracking-wider overdue-card-title">
+                Past Due Tasks
+              </h3>
+            </div>
+            <!-- Count badge -->
+            <span
+              v-if="overdueTasksList.length > 0"
+              class="text-[9px] font-mono font-bold px-2 py-0.5 border border-red-500/40 bg-red-500/20 text-red-400 uppercase"
+            >
+              {{ overdueTasksList.length }} overdue
+            </span>
+          </div>
+
+          <!-- No overdue tasks state -->
+          <div
+            v-if="overdueTasksList.length === 0"
+            class="py-5 flex flex-col items-center gap-2 border border-dashed border-red-500/20 text-center"
+          >
+            <span class="text-green-500 text-lg">✓</span>
+            <p class="text-[10px] font-mono text-[var(--color-text-muted)]">No overdue tasks</p>
+          </div>
+
+          <!-- Overdue task rows -->
+          <div v-else class="space-y-1.5 max-h-[220px] overflow-y-auto overdue-scroll">
+            <div
+              v-for="task in overdueTasksList"
+              :key="task.id"
+              class="overdue-row flex items-start gap-2 p-2.5 border border-red-500/15 bg-red-500/5 hover:bg-red-500/10 transition-all"
+            >
+              <!-- Pulsing dot -->
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1.5 animate-pulse"></span>
+
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-display font-semibold text-red-200/90 truncate leading-tight">
+                  {{ task.title }}
+                </p>
+                <div class="flex items-center justify-between mt-0.5 gap-1">
+                  <span class="text-[9px] font-mono text-red-400/60 truncate">{{ task.subject }}</span>
+                  <span class="text-[9px] font-mono text-red-300/80 shrink-0">
+                    Was due {{ formatDateTime(task) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Days overdue badge -->
+              <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 border border-red-500/30 bg-red-500/15 text-red-400 uppercase shrink-0 self-start mt-0.5">
+                {{ getDaysOverdue(task) }}d
+              </span>
+            </div>
+          </div>
+
+          <!-- Footer note -->
+          <p v-if="overdueTasksList.length > 0" class="text-[9px] font-mono text-red-400/50 mt-2.5 text-right">
+            Complete or reschedule these tasks
+          </p>
         </div>
 
         <!-- Rotating Study Tips Carousel -->
@@ -234,12 +432,12 @@
 
 <script setup>
 import { ref, inject, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { ChevronLeft, ChevronRight, Bell, X } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Bell, X, AlertTriangle } from 'lucide-vue-next'
 import { Chart } from 'chart.js/auto'
 
 const tasks = inject('tasks')
 
-// Due Today Notification
+// ── Due Today Notification ─────────────────────────────────────────────────
 const notifDismissed = ref(false)
 
 const dueTodayTasks = computed(() => {
@@ -252,6 +450,64 @@ const dueTodayTasks = computed(() => {
 watch(dueTodayTasks, (newVal, oldVal) => {
   if (newVal.length > oldVal.length) {
     notifDismissed.value = false
+  }
+})
+
+// ── Overdue Notification ────────────────────────────────────────────────────
+const overdueDismissed = ref(false)
+
+const overdueTasksList = computed(() => {
+  const today = new Date()
+  return tasks.value.filter(t => {
+    if (t.status !== 'pending' || !t.deadline) return false
+    const [y, m, d] = t.deadline.split('-')
+    const deadline = new Date(Number(y), Number(m) - 1, Number(d))
+    
+    if (t.deadlineTime) {
+      const [h, min] = t.deadlineTime.split(':')
+      deadline.setHours(parseInt(h, 10), parseInt(min, 10), 0, 0)
+    } else {
+      deadline.setHours(23, 59, 59, 999)
+    }
+    
+    return deadline < today
+  }).sort((a, b) => {
+    // Most overdue first
+    const dateA = new Date(a.deadline)
+    if (a.deadlineTime) {
+      const [h, m] = a.deadlineTime.split(':')
+      dateA.setHours(parseInt(h, 10), parseInt(m, 10))
+    }
+    const dateB = new Date(b.deadline)
+    if (b.deadlineTime) {
+      const [h, m] = b.deadlineTime.split(':')
+      dateB.setHours(parseInt(h, 10), parseInt(m, 10))
+    }
+    return dateA - dateB
+  })
+})
+
+// How many days past due
+const getDaysOverdue = (task) => {
+  const today = new Date()
+  const [y, m, d] = task.deadline.split('-')
+  const deadline = new Date(Number(y), Number(m) - 1, Number(d))
+  
+  if (task.deadlineTime) {
+    const [h, min] = task.deadlineTime.split(':')
+    deadline.setHours(parseInt(h, 10), parseInt(min, 10), 0, 0)
+  } else {
+    deadline.setHours(23, 59, 59, 999)
+  }
+  
+  const diffDays = Math.ceil((today - deadline) / (1000 * 60 * 60 * 24))
+  return diffDays > 0 ? diffDays : 0 // If it's overdue today, say 0d or 1d
+}
+
+// Re-show overdue banner when new overdue tasks appear
+watch(overdueTasksList, (newVal, oldVal) => {
+  if (newVal.length > oldVal.length) {
+    overdueDismissed.value = false
   }
 })
 
@@ -421,7 +677,72 @@ const formatDateTime = (task) => {
   return dateStr
 }
 
-// Canvas references for Charts
+// ── Chart tab state ───────────────────────────────────────────────────────
+const activeChartTab = ref('subject')
+
+const setChartTab = (tab) => {
+  activeChartTab.value = tab
+  // Resize the now-visible canvas so Chart.js picks up correct dimensions
+  setTimeout(() => {
+    if (tab === 'subject' && subjectChartInstance) subjectChartInstance.resize()
+    if (tab === 'priority' && priorityChartInstance) priorityChartInstance.resize()
+  }, 10)
+}
+
+// ── Chart palette ─────────────────────────────────────────────────────────
+const CHART_COLORS = [
+  '#6366f1', // Indigo
+  '#a855f7', // Purple
+  '#f59e0b', // Amber
+  '#10b981', // Emerald
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+  '#f97316', // Orange
+  '#84cc16', // Lime
+]
+
+const PRIORITY_COLORS = {
+  High:    '#f43f5e',
+  Medium:  '#f59e0b',
+  Low:     '#10b981',
+  Overdue: '#71717a',
+  Done:    '#a3a3a3'
+}
+
+// ── Reactive legend data ─────────────────────────────────────────────────
+const subjectLegend = computed(() => {
+  const map = {}
+  tasks.value.forEach(t => {
+    if (t.subject) map[t.subject] = (map[t.subject] || 0) + 1
+  })
+  const total = Object.values(map).reduce((a, b) => a + b, 0) || 1
+  return Object.entries(map).map(([label, count], idx) => ({
+    label,
+    count,
+    color: CHART_COLORS[idx % CHART_COLORS.length],
+    pct: Math.round((count / total) * 100)
+  }))
+})
+
+const priorityLegend = computed(() => {
+  const order = ['High', 'Medium', 'Low', 'Overdue', 'Done']
+  const map = { High: 0, Medium: 0, Low: 0, Overdue: 0, Done: 0 }
+  tasks.value.forEach(t => {
+    const p = getAutoPriority(t)
+    if (p in map) map[p] += 1
+  })
+  const total = tasks.value.length || 1
+  return order
+    .filter(k => map[k] > 0)
+    .map(k => ({
+      label: k,
+      count: map[k],
+      color: PRIORITY_COLORS[k],
+      pct: Math.round((map[k] / total) * 100)
+    }))
+})
+
+// ── Canvas refs ───────────────────────────────────────────────────────────
 const subjectCanvas = ref(null)
 const priorityCanvas = ref(null)
 
@@ -429,38 +750,24 @@ let subjectChartInstance = null
 let priorityChartInstance = null
 let themeObserver = null
 
-// Re-generate chart data
+// ── Render both charts ────────────────────────────────────────────────────
 const renderCharts = () => {
-  // Resolve CSS themes for Chart.js styling
   const style = getComputedStyle(document.documentElement)
-  const textColor = style.getPropertyValue('--color-text-muted').trim() || '#888'
-  const textHColor = style.getPropertyValue('--color-text-h').trim() || '#111'
-  const borderColor = style.getPropertyValue('--color-border').trim() || '#ddd'
-  const accentColor = style.getPropertyValue('--color-accent').trim() || '#3b82f6'
+  const textColor   = style.getPropertyValue('--color-text-muted').trim() || '#888'
+  const borderColor = style.getPropertyValue('--color-border').trim()      || '#ddd'
+  const bgCard      = style.getPropertyValue('--color-bg-card').trim()     || '#fff'
+  const accentColor = style.getPropertyValue('--color-accent').trim()      || '#6366f1'
 
-  // Helper colors for Doughnut
-  const chartColors = [
-    accentColor, 
-    '#a855f7', // Purple
-    '#f59e0b', // Amber
-    '#10b981', // Emerald
-    '#ec4899', // Pink
-    '#06b6d4', // Cyan
-    '#f97316'  // Orange
-  ]
+  // override first palette slot with the theme accent
+  const palette = [accentColor, ...CHART_COLORS.slice(1)]
 
-  // 1. Subject distribution Chart
+  // 1. Subject Doughnut ─────────────────────────────────────────────────
   if (subjectChartInstance) subjectChartInstance.destroy()
   if (subjectCanvas.value && uniqueSubjectsCount.value > 0) {
-    const subjectsMap = {}
-    tasks.value.forEach(t => {
-      if (t.subject) {
-        subjectsMap[t.subject] = (subjectsMap[t.subject] || 0) + 1
-      }
-    })
-
-    const labels = Object.keys(subjectsMap)
-    const data = Object.values(subjectsMap)
+    const map = {}
+    tasks.value.forEach(t => { if (t.subject) map[t.subject] = (map[t.subject] || 0) + 1 })
+    const labels = Object.keys(map)
+    const data   = Object.values(map)
 
     subjectChartInstance = new Chart(subjectCanvas.value, {
       type: 'doughnut',
@@ -468,21 +775,21 @@ const renderCharts = () => {
         labels,
         datasets: [{
           data,
-          backgroundColor: chartColors.slice(0, labels.length),
-          borderWidth: 1,
-          borderColor: style.getPropertyValue('--color-bg-card').trim() || '#fff'
+          backgroundColor: palette.slice(0, labels.length),
+          borderWidth: 2,
+          borderColor: bgCard,
+          hoverOffset: 6
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
+        cutout: '68%',
         plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              boxWidth: 12,
-              font: { family: 'Outfit', size: 10 },
-              color: textColor
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.label}: ${ctx.parsed} task${ctx.parsed !== 1 ? 's' : ''}`
             }
           }
         }
@@ -490,54 +797,51 @@ const renderCharts = () => {
     })
   }
 
-  // 2. Priority Distribution Chart (auto-calculated from deadlines)
+  // 2. Priority Bar ─────────────────────────────────────────────────────
   if (priorityChartInstance) priorityChartInstance.destroy()
   if (priorityCanvas.value && totalTasks.value > 0) {
-    const priorityMap = { High: 0, Medium: 0, Low: 0, Overdue: 0 }
-    tasks.value.forEach(t => {
-      const p = getAutoPriority(t)
-      if (p in priorityMap) priorityMap[p] += 1
-    })
+    const map = { High: 0, Medium: 0, Low: 0, Overdue: 0, Done: 0 }
+    tasks.value.forEach(t => { const p = getAutoPriority(t); if (p in map) map[p] += 1 })
+
+    const labels = ['High', 'Medium', 'Low', 'Overdue', 'Done'].filter(k => map[k] > 0)
+    const data   = labels.map(k => map[k])
+    const bgColors   = labels.map(k => PRIORITY_COLORS[k] + 'bb')
+    const bdrColors  = labels.map(k => PRIORITY_COLORS[k])
 
     priorityChartInstance = new Chart(priorityCanvas.value, {
       type: 'bar',
       data: {
-        labels: ['High', 'Medium', 'Low', 'Overdue'],
+        labels,
         datasets: [{
           label: 'Tasks',
-          data: [priorityMap.High, priorityMap.Medium, priorityMap.Low, priorityMap.Overdue],
-          backgroundColor: [
-            'rgba(244, 63, 94, 0.75)',
-            'rgba(245, 158, 11, 0.75)',
-            'rgba(16, 185, 129, 0.75)',
-            'rgba(39, 39, 42, 0.85)'
-          ],
-          borderColor: ['#f43f5e', '#f59e0b', '#10b981', '#52525b'],
-          borderWidth: 1
+          data,
+          backgroundColor: bgColors,
+          borderColor: bdrColors,
+          borderWidth: 1,
+          borderRadius: 3,
+          borderSkipped: false
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false }
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.parsed.y} task${ctx.parsed.y !== 1 ? 's' : ''}`
+            }
+          }
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: {
-              color: textColor,
-              font: { family: 'Outfit', size: 11 }
-            },
+            ticks: { color: textColor, font: { family: 'Outfit', size: 11 } },
             border: { color: borderColor }
           },
           y: {
-            grid: { color: borderColor, drawTicks: false },
-            ticks: {
-              color: textColor,
-              font: { family: 'Inter', size: 10 },
-              stepSize: 1
-            },
+            grid: { color: borderColor + '66', drawTicks: false },
+            ticks: { color: textColor, font: { family: 'Inter', size: 10 }, stepSize: 1 },
             border: { color: borderColor }
           }
         }
@@ -704,5 +1008,120 @@ onBeforeUnmount(() => {
     transform: translateY(-8px) scaleY(0.95);
     max-height: 0;
   }
+}
+/* ─── Overdue Banner ──────────────────────────────────────────────────────── */
+.overdue-banner {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.12),
+    rgba(239, 68, 68, 0.04)
+  );
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 2px 20px rgba(239, 68, 68, 0.15);
+}
+
+.overdue-accent-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #ef4444, rgba(239, 68, 68, 0.4));
+  animation: overdue-bar-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes overdue-bar-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.overdue-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  flex-shrink: 0;
+}
+
+.overdue-icon {
+  color: #ef4444;
+  animation: overdue-shake 2.5s ease-in-out infinite;
+}
+
+@keyframes overdue-shake {
+  0%,  90%, 100% { transform: rotate(0deg); }
+  92%             { transform: rotate(-12deg); }
+  94%             { transform: rotate(12deg); }
+  96%             { transform: rotate(-8deg); }
+  98%             { transform: rotate(8deg); }
+}
+
+.overdue-title {
+  color: #fca5a5;
+  letter-spacing: 0.07em;
+}
+
+.overdue-task-chip {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 2px;
+  padding: 3px 8px;
+  transition: background 0.15s ease;
+}
+
+.overdue-task-chip:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.overdue-dismiss {
+  color: #f87171;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.overdue-dismiss:hover {
+  color: #ffffff;
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* ─── Past Due Tasks Card (right column) ─────────────────────────────────── */
+.overdue-card {
+  background: linear-gradient(
+    160deg,
+    rgba(239, 68, 68, 0.09),
+    rgba(239, 68, 68, 0.03)
+  );
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.overdue-card-title {
+  color: #fca5a5;
+  letter-spacing: 0.07em;
+}
+
+.overdue-row {
+  border-radius: 2px;
+}
+
+/* Custom thin red scrollbar for the list */
+.overdue-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.overdue-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.overdue-scroll::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.3);
+  border-radius: 2px;
+}
+.overdue-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.6);
 }
 </style>

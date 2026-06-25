@@ -303,6 +303,58 @@
         </form>
       </div>
     </div>
+
+    <!-- ── Delete Confirmation Modal ── -->
+    <Transition name="modal-fade">
+      <div 
+        v-if="deleteConfirm.show" 
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+        @click.self="cancelDelete"
+      >
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+        <!-- Dialog -->
+        <div class="relative bg-[var(--color-bg-card)] border border-[var(--color-border)] shadow-2xl w-full max-w-sm p-6 animate-slide-up">
+          <!-- Icon -->
+          <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/10 border border-red-500/20">
+            <Trash2 class="w-5 h-5 text-red-500" />
+          </div>
+
+          <!-- Title -->
+          <h3 class="text-sm font-bold uppercase font-display tracking-wider text-[var(--color-text-h)] text-center mb-1">
+            Delete Task
+          </h3>
+
+          <!-- Message -->
+          <p class="text-xs font-body text-[var(--color-text-muted)] text-center mb-1">
+            Are you sure you want to delete
+          </p>
+          <p class="text-xs font-display font-semibold text-[var(--color-text-h)] text-center px-4 py-2 bg-[var(--color-bg-panel)] border border-[var(--color-border)] mb-4 truncate">
+            "{{ deleteConfirm.taskTitle }}"
+          </p>
+          <p class="text-[10px] font-mono text-red-500/70 text-center mb-5">
+            This action cannot be undone.
+          </p>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2">
+            <button 
+              @click="cancelDelete" 
+              class="premium-btn-secondary text-xs flex-1"
+            >
+              Cancel
+            </button>
+            <button 
+              @click="confirmDelete" 
+              class="flex-1 px-4 py-2 text-xs font-display font-bold uppercase tracking-wider border border-red-500/40 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-200 cursor-pointer"
+            >
+              Yes, Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -491,7 +543,24 @@ const toggleTaskStatus = (task) => {
   updateTask({ ...task, status: task.status === 'completed' ? 'pending' : 'completed' })
 }
 
+// ── Delete Confirmation ───────────────────────────────────────────────────
+const deleteConfirm = ref({
+  show: false,
+  taskId: null,
+  taskTitle: ''
+})
+
 const handleDelete = (id) => {
+  const task = tasks.value.find(t => t.id === id)
+  deleteConfirm.value = {
+    show: true,
+    taskId: id,
+    taskTitle: task ? task.title : 'this task'
+  }
+}
+
+const confirmDelete = () => {
+  const id = deleteConfirm.value.taskId
   // Also remove from today's plan if present
   if (todayPlanIds.value.has(id)) {
     const next = new Set(todayPlanIds.value)
@@ -499,6 +568,11 @@ const handleDelete = (id) => {
     todayPlanIds.value = next
   }
   deleteTask(id)
+  cancelDelete()
+}
+
+const cancelDelete = () => {
+  deleteConfirm.value = { show: false, taskId: null, taskTitle: '' }
 }
 
 // ── Modal helpers ─────────────────────────────────────────────────────────
