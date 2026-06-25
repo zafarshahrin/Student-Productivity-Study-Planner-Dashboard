@@ -85,7 +85,7 @@
       </div>
       <button
         v-if="activeSubTab === 'weekly'"
-        @click="window.print()"
+        @click="handlePrint"
         class="premium-btn text-xs mb-2 mr-2 hidden md:flex items-center gap-2"
       >
         <Printer class="w-4 h-4" /> Print Weekly Plan
@@ -187,6 +187,10 @@ const settings = inject('plannerSettings')
 const todayPlan = inject('todayPlan')
 
 const activeSubTab = ref('daily')
+
+const handlePrint = () => {
+  window.print()
+}
 
 const formatDuration = (hours) => {
   const h = Math.floor(hours)

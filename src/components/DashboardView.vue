@@ -53,7 +53,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
       <div class="premium-card p-4 flex flex-col justify-between h-28">
         <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">Total Tasks</span>
         <div class="flex items-baseline justify-between mt-2">
@@ -75,16 +75,6 @@
         <div class="flex items-baseline justify-between mt-2">
           <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">{{ completedTasksCount }}</span>
           <span class="text-xs font-mono text-[var(--color-text-muted)]">{{ completedHours }} hrs done</span>
-        </div>
-      </div>
-
-      <div class="premium-card p-4 flex flex-col justify-between h-28 border-l-2" :style="{ borderLeftColor: getProductivityColor() }">
-        <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">Productivity Ratio</span>
-        <div class="flex items-baseline justify-between mt-2">
-          <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">{{ productivityRatio }}%</span>
-          <span class="text-[10px] uppercase font-display font-bold px-1.5 py-0.5 border" :class="getProductivityBadgeClasses()">
-            {{ productivityLevel }}
-          </span>
         </div>
       </div>
     </div>
