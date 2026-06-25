@@ -12,14 +12,30 @@
       <!-- Top navbar header -->
       <header class="print:hidden hidden md:flex items-center justify-between px-8 py-4 border-b border-[var(--color-border)] bg-[var(--color-bg-card)]">
         <div>
-          <h2 class="font-display font-bold text-sm tracking-wide text-[var(--color-text-h)] uppercase">
-            {{ activeTabName }}
-          </h2>
+          <div>
+  <h2 class="font-display font-bold text-xl text-[var(--color-text-h)]">
+    {{ activeTabName }}
+       </h2>
+
+        <p class="mt-1 text-sm text-[var(--color-text-muted)]">
+        Your academic journey starts here.
+       </p>
+        </div>
+      
         </div>
         <div class="flex items-center gap-4 text-xs font-mono text-[var(--color-text-muted)]">
-          <span>Status: Online</span>
+          <span>
+             <span class="online-dot"></span>
+          Online
+          </span>
           <span>•</span>
-          <span class="text-[var(--color-accent)] font-semibold">{{ currentTheme.toUpperCase() }} THEME</span>
+          <span class="text-[var(--color-accent)] font-semibold">
+            {{
+               currentTheme === 'calm'
+                 ? '🌸 Calm Theme'
+                 : '🍵 Dark Theme'
+             }}
+        </span>
         </div>
       </header>
 

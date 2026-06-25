@@ -52,32 +52,93 @@
       </button>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
-      <div class="premium-card p-4 flex flex-col justify-between h-28">
-        <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">Total Tasks</span>
-        <div class="flex items-baseline justify-between mt-2">
-          <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">{{ totalTasks }}</span>
-          <span class="text-xs font-mono text-[var(--color-text-muted)]">{{ totalHours }} hrs est.</span>
-        </div>
-      </div>
+<!-- Summary Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-      <div class="premium-card p-4 flex flex-col justify-between h-28">
-        <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">Pending Tasks</span>
-        <div class="flex items-baseline justify-between mt-2">
-          <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">{{ pendingTasksCount }}</span>
-          <span class="text-xs font-mono text-[var(--color-text-muted)]">{{ pendingHours }} hrs remaining</span>
-        </div>
-      </div>
-
-      <div class="premium-card p-4 flex flex-col justify-between h-28">
-        <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">Completed Tasks</span>
-        <div class="flex items-baseline justify-between mt-2">
-          <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">{{ completedTasksCount }}</span>
-          <span class="text-xs font-mono text-[var(--color-text-muted)]">{{ completedHours }} hrs done</span>
-        </div>
-      </div>
+  <!-- Total Tasks -->
+  <div class="premium-card summary-card p-4 flex flex-col justify-between h-28">
+    <div class="flex items-center gap-2">
+      <BookOpen class="w-4 h-4 text-[var(--color-accent)]" />
+      <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">
+        Total Tasks
+      </span>
     </div>
+
+    <div class="flex items-baseline justify-between mt-2">
+      <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">
+        {{ totalTasks }}
+      </span>
+
+      <span class="text-xs font-mono text-[var(--color-text-muted)]">
+        {{ totalHours }} hrs est.
+      </span>
+    </div>
+  </div>
+
+  <!-- Pending -->
+  <div class="premium-card summary-card p-4 flex flex-col justify-between h-28">
+    <div class="flex items-center gap-2">
+      <Clock3 class="w-4 h-4 text-[var(--color-accent)]" />
+      <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">
+        Pending Tasks
+      </span>
+    </div>
+
+    <div class="flex items-baseline justify-between mt-2">
+      <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">
+        {{ pendingTasksCount }}
+      </span>
+
+      <span class="text-xs font-mono text-[var(--color-text-muted)]">
+        {{ pendingHours }} hrs remaining
+      </span>
+    </div>
+  </div>
+
+  <!-- Completed -->
+  <div class="premium-card summary-card p-4 flex flex-col justify-between h-28">
+    <div class="flex items-center gap-2">
+      <CheckCircle2 class="w-4 h-4 text-[var(--color-accent)]" />
+      <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">
+        Completed Tasks
+      </span>
+    </div>
+
+    <div class="flex items-baseline justify-between mt-2">
+      <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">
+        {{ completedTasksCount }}
+      </span>
+
+      <span class="text-xs font-mono text-[var(--color-text-muted)]">
+        {{ completedHours }} hrs done
+      </span>
+    </div>
+  </div>
+
+  <!-- Productivity -->
+  <div class="premium-card summary-card p-4 flex flex-col justify-between h-28">
+    <div class="flex items-center gap-2">
+      <TrendingUp class="w-4 h-4 text-[var(--color-accent)]" />
+      <span class="text-[10px] uppercase font-display font-semibold tracking-wider text-[var(--color-text-muted)]">
+        Productivity Ratio
+      </span>
+    </div>
+
+    <div class="flex items-baseline justify-between mt-2">
+      <span class="text-3xl font-display font-bold text-[var(--color-text-h)]">
+        {{ productivityRatio }}%
+      </span>
+
+      <span
+        class="text-[10px] uppercase font-display font-bold px-1.5 py-0.5 border"
+        :class="getProductivityBadgeClasses()"
+      >
+        {{ productivityLevel }}
+      </span>
+    </div>
+  </div>
+
+</div>
 
     <!-- Charts + Right Column -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -161,7 +222,9 @@
               class="p-2.5 border border-[var(--color-border)] bg-[var(--color-bg-panel)]/30 flex flex-col gap-1.5">
               <div class="flex items-start justify-between gap-2">
                 <span class="text-xs font-bold text-[var(--color-text-h)] font-display truncate">{{ task.title }}</span>
-                <span class="text-[9px] font-mono px-1 border uppercase font-semibold shrink-0" :class="getAutoPriorityClasses(task)">
+                <span class="text-[9px] font-mono px-1 border uppercase font-semibold shrink-0" 
+                :class="getAutoPriorityClasses(task)"
+                >
                   {{ getAutoPriority(task) }}
                 </span>
               </div>
@@ -225,7 +288,17 @@
 
 <script setup>
 import { ref, inject, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { ChevronLeft, ChevronRight, Bell, X, AlertTriangle } from 'lucide-vue-next'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Bell,
+  X,
+  AlertTriangle,
+  BookOpen,
+  Clock3,
+  CheckCircle2,
+  TrendingUp
+} from 'lucide-vue-next'
 import { Chart } from 'chart.js/auto'
 
 const tasks = inject('tasks')
@@ -350,9 +423,8 @@ const getProductivityBadgeClasses = () => {
   const l = productivityLevel.value
   if (l === 'Exceptional') return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 font-semibold'
   if (l === 'Productive')  return 'border-amber-500/20 bg-amber-500/10 text-amber-600 font-semibold'
-  return 'border-gray-500/20 bg-gray-500/10 text-gray-600 font-semibold'
+return 'border-[var(--color-accent)]/30 bg-[var(--color-accent-light)] text-[var(--color-accent)] font-semibold'
 }
-
 const upcomingTasks = computed(() =>
   [...tasks.value].filter(t => t.status === 'pending').sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 3)
 )
