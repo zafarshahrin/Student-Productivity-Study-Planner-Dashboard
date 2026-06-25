@@ -2,6 +2,7 @@
   <div class="min-h-screen bg-[var(--color-bg)] flex flex-col md:flex-row">
     <!-- Navigation Sidebar -->
     <Sidebar 
+      class="print:hidden"
       v-model:activeTab="activeTab" 
       v-model:currentTheme="currentTheme" 
     />
@@ -9,7 +10,7 @@
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0">
       <!-- Top navbar header -->
-      <header class="hidden md:flex items-center justify-between px-8 py-4 border-b border-[var(--color-border)] bg-[var(--color-bg-card)]">
+      <header class="print:hidden hidden md:flex items-center justify-between px-8 py-4 border-b border-[var(--color-border)] bg-[var(--color-bg-card)]">
         <div>
           <h2 class="font-display font-bold text-sm tracking-wide text-[var(--color-text-h)] uppercase">
             {{ activeTabName }}
@@ -80,7 +81,7 @@ const activeTabName = computed(() => {
     tasks: 'Task Management',
     planner: 'Daily & Weekly Study Planner',
     pomodoro: 'Pomodoro Timer',
-    about: 'Eight Golden Rules'
+    about: 'About Us'
   }
   return map[activeTab.value] || 'StudyFlow'
 })

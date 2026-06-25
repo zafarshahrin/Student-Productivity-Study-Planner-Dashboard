@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Settings Panel -->
-    <div class="premium-card p-5">
+    <div class="premium-card p-5 print:hidden">
       <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
         Planner Settings & Rules
       </h3>
@@ -46,20 +46,30 @@
     </div>
 
     <!-- Toggle Buttons Daily / Weekly -->
-    <div class="flex border-b border-[var(--color-border)]">
+    <div class="flex border-b border-[var(--color-border)] justify-between items-center print:hidden">
+      <div class="flex">
+        <button 
+          @click="activeSubTab = 'daily'"
+          class="px-4 py-2 text-xs font-display font-bold uppercase tracking-wider border-b-2 -mb-[2px] transition-all cursor-pointer"
+          :class="activeSubTab === 'daily' ? 'border-[var(--color-accent)] text-[var(--color-text-h)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-h)]'"
+        >
+          Daily Schedule (Today)
+        </button>
+        <button 
+          @click="activeSubTab = 'weekly'"
+          class="px-4 py-2 text-xs font-display font-bold uppercase tracking-wider border-b-2 -mb-[2px] transition-all cursor-pointer"
+          :class="activeSubTab === 'weekly' ? 'border-[var(--color-accent)] text-[var(--color-text-h)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-h)]'"
+        >
+          Weekly Schedule Grid
+        </button>
+      </div>
+      
       <button 
-        @click="activeSubTab = 'daily'"
-        class="px-4 py-2 text-xs font-display font-bold uppercase tracking-wider border-b-2 -mb-[2px] transition-all cursor-pointer"
-        :class="activeSubTab === 'daily' ? 'border-[var(--color-accent)] text-[var(--color-text-h)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-h)]'"
+        v-if="activeSubTab === 'weekly'"
+        @click="printWeeklyPlan" 
+        class="premium-btn text-xs mb-2 mr-2 hidden md:flex items-center gap-2"
       >
-        Daily Schedule (Today)
-      </button>
-      <button 
-        @click="activeSubTab = 'weekly'"
-        class="px-4 py-2 text-xs font-display font-bold uppercase tracking-wider border-b-2 -mb-[2px] transition-all cursor-pointer"
-        :class="activeSubTab === 'weekly' ? 'border-[var(--color-accent)] text-[var(--color-text-h)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-h)]'"
-      >
-        Weekly Schedule Grid
+        <Printer class="w-4 h-4" /> Print Weekly Plan
       </button>
     </div>
 
@@ -183,11 +193,16 @@
 
 <script setup>
 import { ref, inject, computed } from 'vue'
+import { Printer } from 'lucide-vue-next'
 
 const tasks = inject('tasks')
 const settings = inject('plannerSettings')
 
 const activeSubTab = ref('daily')
+
+const printWeeklyPlan = () => {
+  window.print()
+}
 
 // Helper to convert decimal hours to a readable duration string (e.g. 1.25 -> 1h 15m)
 const formatDuration = (hours) => {

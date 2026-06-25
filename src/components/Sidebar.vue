@@ -130,7 +130,7 @@ const menuItems = [
   { id: 'tasks', label: 'Task Manager', icon: CheckSquare },
   { id: 'planner', label: 'Study Planner', icon: Calendar },
   { id: 'pomodoro', label: 'Pomodoro Timer', icon: Timer },
-  { id: 'about', label: 'About Design', icon: Info }
+  { id: 'about', label: 'About Us', icon: Info }
 ]
 
 const themes = [
