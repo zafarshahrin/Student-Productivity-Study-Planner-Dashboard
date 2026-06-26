@@ -62,7 +62,8 @@
             ]"
           >
             <component :is="item.icon" class="w-4 h-4 transition-transform group-hover:scale-105" />
-            <span>{{ item.label }}</span>
+            <span class="flex-1 text-left">{{ item.label }}</span>
+            <span class="text-[10px] opacity-60 font-mono">{{ item.shortcut }}</span>
           </button>
         </nav>
       </div>
@@ -126,11 +127,11 @@ const emit = defineEmits(['update:activeTab', 'update:currentTheme'])
 const isOpen = ref(false)
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'tasks', label: 'Task Manager', icon: CheckSquare },
-  { id: 'planner', label: 'Study Planner', icon: Calendar },
-  { id: 'pomodoro', label: 'Pomodoro Timer', icon: Timer },
-  { id: 'about', label: 'About Us', icon: Info }
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, shortcut: 'Alt+D' },
+  { id: 'tasks', label: 'Task Manager', icon: CheckSquare, shortcut: 'Alt+T' },
+  { id: 'planner', label: 'Study Planner', icon: Calendar, shortcut: 'Alt+P' },
+  { id: 'pomodoro', label: 'Pomodoro Timer', icon: Timer, shortcut: 'Alt+M' },
+  { id: 'about', label: 'About Us', icon: Info, shortcut: 'Alt+A' }
 ]
 
 const themes = [

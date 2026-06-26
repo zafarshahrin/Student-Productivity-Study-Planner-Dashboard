@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, computed, provide, watch } from 'vue'
+import { ref, computed, provide, watch, onMounted, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
 import Sidebar from './components/Sidebar.vue'
 import DashboardView from './components/DashboardView.vue'
@@ -122,6 +122,42 @@ watch(currentTheme, (newTheme) => {
   document.documentElement.classList.remove('theme-calm', 'theme-focus', 'theme-dark')
   document.documentElement.classList.add(`theme-${newTheme}`)
 }, { immediate: true })
+
+// Global Keyboard Shortcuts
+const handleKeydown = (e) => {
+  if (e.altKey) {
+    switch (e.key.toLowerCase()) {
+      case 'd':
+        e.preventDefault();
+        activeTab.value = 'dashboard';
+        break;
+      case 't':
+        e.preventDefault();
+        activeTab.value = 'tasks';
+        break;
+      case 'p':
+        e.preventDefault();
+        activeTab.value = 'planner';
+        break;
+      case 'm':
+        e.preventDefault();
+        activeTab.value = 'pomodoro';
+        break;
+      case 'a':
+        e.preventDefault();
+        activeTab.value = 'about';
+        break;
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 
 // Core State variables
 const tasks = useLocalStorage('studyflow_tasks', defaultTasks)

@@ -139,35 +139,41 @@
     </div>
 
     <!-- Weekly Grid -->
-    <div v-else>
-      <p class="text-xs font-mono text-[var(--color-text-muted)] mb-4">Tasks are arranged by their deadline date</p>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
+    <div v-else class="print:mt-0">
+      <p class="text-xs font-mono text-[var(--color-text-muted)] mb-4 print:hidden">Tasks are arranged by their deadline date</p>
+      
+      <!-- Print Header (only visible when printing) -->
+      <div class="hidden print:block text-center mb-4">
+        <h2 class="text-xl font-bold font-display text-[var(--color-text-h)]">Weekly Study Schedule</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3 print:grid-cols-7 print:gap-1">
         <div
           v-for="day in weeklySchedule"
           :key="day.name"
-          class="premium-card p-3 flex flex-col min-h-[360px]"
+          class="premium-card p-3 flex flex-col min-h-[360px] print:min-h-0 print:h-auto print:p-1 print:border print:border-gray-300 print:shadow-none print:break-inside-avoid"
           :class="{ 'opacity-60': isPastDay(day.date) }"
         >
-          <div class="border-b border-[var(--color-border)] pb-2 mb-2 text-center">
-            <h4 class="text-xs font-bold text-[var(--color-text-h)] font-display">{{ day.name }}</h4>
-            <span class="text-[9px] font-mono text-[var(--color-text-muted)]">{{ formatDateHeader(day.date) }}</span>
+          <div class="border-b border-[var(--color-border)] pb-2 mb-2 text-center print:pb-1 print:mb-1">
+            <h4 class="text-xs font-bold text-[var(--color-text-h)] font-display print:text-[10px]">{{ day.name }}</h4>
+            <span class="text-[9px] font-mono text-[var(--color-text-muted)] print:text-[8px]">{{ formatDateHeader(day.date) }}</span>
           </div>
 
-          <div class="flex-1 space-y-2 overflow-y-auto max-h-[300px]">
+          <div class="flex-1 space-y-2 overflow-y-auto max-h-[300px] print:max-h-none print:overflow-visible print:space-y-1">
             <div
               v-for="(task, idx) in day.tasks"
               :key="idx"
-              class="p-2 border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[11px]"
+              class="p-2 border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[11px] print:p-1 print:text-[9px]"
               style="border-left: 2px solid var(--color-accent)"
             >
-              <div class="font-bold text-[var(--color-text-h)] truncate">{{ task.title }}</div>
-              <div class="flex items-center justify-between text-[9px] text-[var(--color-text-muted)] font-mono mt-1">
+              <div class="font-bold text-[var(--color-text-h)] truncate print:whitespace-normal print:leading-tight">{{ task.title }}</div>
+              <div class="flex items-center justify-between text-[9px] text-[var(--color-text-muted)] font-mono mt-1 print:mt-0.5 print:text-[7px]">
                 <span class="truncate mr-1">{{ task.subject || '—' }}</span>
                 <span class="shrink-0 text-[var(--color-accent)] font-semibold">{{ task.deadlineTimeStr }}</span>
               </div>
             </div>
 
-            <div v-if="day.tasks.length === 0" class="py-12 text-center text-[10px] font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
+            <div v-if="day.tasks.length === 0" class="py-12 text-center text-[10px] font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)] print:py-4 print:text-[8px]">
               No Deadlines
             </div>
           </div>
