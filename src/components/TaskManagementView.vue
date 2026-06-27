@@ -1,31 +1,91 @@
 <template>
   <div class="space-y-6">
 
+  <!-- Success Toast -->
+<transition
+  enter-active-class="transition duration-300"
+  enter-from-class="opacity-0 translate-y-2"
+  enter-to-class="opacity-100 translate-y-0"
+  leave-active-class="transition duration-300"
+  leave-from-class="opacity-100 translate-y-0"
+  leave-to-class="opacity-0 translate-y-2"
+>
+  <div
+  v-if="toast.show"
+  class="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
+>
+  <div class="bg-green-500 text-white px-6 py-4 rounded-lg shadow-xl rounded-xl">
+    {{ toast.message }}
+  </div>
+</div>
+</transition>
+
     <!-- Header Controls -->
     <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
       <div class="flex flex-wrap gap-2.5 w-full lg:w-auto">
         <div class="relative flex-1 sm:flex-initial">
           <input v-model="searchQuery" type="text" placeholder="       Search by title..."
-            class="premium-input w-full sm:w-64 pl-8"/>
-          <Search class="w-4 h-4 absolute left-2.5 top-3 text-[var(--color-text-muted)]"/>
-        </div>
+            class="premium-input w-full sm:w-64 "
+            style="padding-left:42px;"/>
+<Search
+  class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
+/>    
+    </div>
         <select v-model="filterSubject" class="premium-input text-xs font-display">
           <option value="">All Subjects</option>
           <option v-for="subj in uniqueSubjects" :key="subj" :value="subj">{{ subj }}</option>
-        </select>
-        <select v-model="filterStatus" class="premium-input text-xs font-display">
-          <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="completed">Completed</option>
         </select>
       </div>
       <button @click="openCreateModal" class="premium-btn text-xs w-full lg:w-auto flex items-center gap-2">
         <Plus class="w-4 h-4"/> Add New Task
       </button>
     </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div
+  class="premium-card p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+>    <p class="text-xs text-[var(--color-text-muted)] uppercase">Total Tasks</p>
+    <h2 class="text-3xl font-bold text-[var(--color-text-h)]">
+      {{ totalTasks }}
+    </h2>
+  </div>
+
+<div
+  class="premium-card p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+>    <p class="text-xs text-[var(--color-text-muted)] uppercase">Pending</p>
+    <h2 class="text-3xl font-bold text-yellow-500">
+      {{ pendingCount }}
+    </h2>
+  </div>
+
+  <div
+  class="premium-card p-4 text-center cursor-pointer hover:shadow-lg transition"
+  @click="scrollToCompleted"
+>
+    <p class="text-xs text-[var(--color-text-muted)] uppercase">Completed</p>
+    <h2 class="text-3xl font-bold text-green-500">
+      {{ completedCount }}
+    </h2>
+  </div>
+<div
+  class="premium-card p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+>  <p class="text-xs text-[var(--color-text-muted)] uppercase">
+    Overdue
+  </p>
+
+  <h2 class="text-3xl font-bold text-red-500">
+    {{ overdueCount }}
+  </h2>
+</div>
+</div>
 
     <!-- Tasks Table -->
-    <div class="premium-card overflow-hidden">
+    <div
+  class="premium-card overflow-hidden
+         hover:-translate-y-1
+         hover:shadow-xl
+         transition-all
+         duration-300"
+>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -49,7 +109,7 @@
             </tr>
           </thead>
           <tbody class="text-sm font-body">
-            <tr v-for="task in filteredTasks" :key="task.id"
+            <tr v-for="task in pendingTasks" :key="task.id"
               class="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-panel)]/30 transition-colors"
               :class="{ 'opacity-65 line-through decoration-[var(--color-text-muted)]': task.status === 'completed' }">
 
@@ -63,13 +123,15 @@
               </td>
 
               <!-- Title -->
-              <td class="p-3 text-[var(--color-text-h)] font-medium font-display">{{ task.title }}</td>
+              <td class="p-3 text-[var(--color-text-h)] font-medium font-display">
+               <span v-html="highlightText(task.title)"></span>
+               </td>
 
               <!-- Subject -->
               <td class="p-3">
                 <span class="px-2 py-0.5 text-xs font-medium border border-[var(--color-border)] bg-[var(--color-bg-card)]">
-                  {{ task.subject }}
-                </span>
+                  <span v-html="highlightText(task.subject)"></span>
+                  </span>
               </td>
 
               <!-- Hours -->
@@ -118,7 +180,7 @@
               </td>
             </tr>
 
-            <tr v-if="filteredTasks.length === 0">
+            <tr v-if="pendingTasks.length === 0">
               <td colspan="8" class="p-8 text-center text-xs text-[var(--color-text-muted)] font-mono">
                 No matching tasks found.
               </td>
@@ -215,7 +277,7 @@
         <p class="text-xs font-display font-semibold text-[var(--color-text-h)] text-center px-4 py-2 bg-[var(--color-bg-panel)] border border-[var(--color-border)] mb-4 truncate">
           "{{ deleteConfirm.taskTitle }}"
         </p>
-        <p class="text-[10px] font-mono text-red-500/70 text-center mb-5">This action cannot be undone.</p>
+        <p class="text-[10px] font-mono text-red-500/70 text-center mb-5"></p>
         <div class="flex items-center gap-2">
           <button @click="cancelDelete" class="premium-btn-secondary text-xs flex-1">Cancel</button>
           <button @click="confirmDelete"
@@ -227,6 +289,53 @@
     </div>
 
   </div>
+  <!-- Completed Tasks -->
+<div
+  id="completed-section"
+class="premium-card overflow-hidden mt-6 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+  <div class="px-4 py-3 border-b border-[var(--color-border)]">
+    <h3 class="font-display font-bold text-sm uppercase">
+      Completed Tasks
+    </h3>
+  </div>
+
+  <div
+    v-for="task in completedTasks"
+    :key="task.id"
+    class="flex justify-between items-center p-4 border-b border-[var(--color-border)] opacity-70"
+  >
+    <div>
+      <p class="line-through">
+  <span v-html="highlightText(task.title)"></span>
+</p>
+      
+      <p class="text-xs text-[var(--color-text-muted)]">
+  <span v-html="highlightText(task.subject)"></span>
+</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+  <span class="text-xs text-green-500">
+    ✓ Completed
+  </span>
+
+  <button
+    @click="toggleTaskStatus(task)"
+    class="text-xs px-3 py-1 rounded-md border border-blue-300 text-blue-600 hover:bg-blue-50 transition"
+  >
+    Restore
+  </button>
+</div>
+</div>
+
+  <div
+    v-if="completedTasks.length === 0"
+    class="p-4 text-center text-xs text-[var(--color-text-muted)]"
+  >
+    No completed tasks yet.
+  </div>
+
+</div>
 </template>
 
 <script setup>
@@ -239,6 +348,44 @@ const updateTask = inject('updateTask')
 const deleteTask = inject('deleteTask')
 const todayPlanIds = inject('todayPlan')
 const todayPlan = todayPlanIds
+
+const deleteConfirm = ref({
+  show: false,
+  task: null
+})
+
+
+
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success'
+})
+
+const showToast = (message, type = 'success') => {
+  toast.value = {
+    show: true,
+    message,
+    type
+  }
+
+  setTimeout(() => {
+    toast.value.show = false
+  }, 3000)
+}
+
+
+
+const scrollToCompleted = () => {
+  const section = document.getElementById('completed-section')
+
+  if (section) {
+    section.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
+}
 
 const toggleTodayPlan = (id) => {
   const next = new Set(todayPlanIds.value)
@@ -279,7 +426,6 @@ const modal = ref({ show: false, mode: 'create', taskId: null })
 const form = ref({ title: '', subject: '', estimatedHours: null, deadlineDate: '', deadlineTime: '' })
 const errors = ref({})
 
-const deleteConfirm = ref({ show: false, taskId: null, taskTitle: '' })
 
 const uniqueSubjects = computed(() => [...new Set(tasks.value.map(t => t.subject))].filter(Boolean).sort())
 
@@ -311,6 +457,36 @@ const filteredTasks = computed(() => {
 
   return list
 })
+const highlightText = (text) => {
+  if (!searchQuery.value) return text
+
+  const keyword = searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  return text.replace(
+    new RegExp(`(${keyword})`, 'gi'),
+    '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>'
+  )
+}
+
+const pendingTasks = computed(() =>
+  filteredTasks.value.filter(task => task.status !== 'completed')
+)
+
+const completedTasks = computed(() =>
+  filteredTasks.value.filter(task => task.status === 'completed')
+)
+
+const totalTasks = computed(() => tasks.value.length)
+
+const completedCount = computed(() =>
+  tasks.value.filter(task => task.status === 'completed').length
+)
+const overdueCount = computed(() =>
+  pendingTasks.value.filter(task => isOverdue(task)).length
+)
+const pendingCount = computed(() =>
+  tasks.value.filter(task => task.status !== 'completed').length
+)
 
 const formatDateTime = (task) => {
   if (!task.deadline) return '-'
@@ -340,7 +516,20 @@ const isOverdue = (task) => {
   return deadlineDate < today
 }
 
-const toggleTaskStatus = (task) => updateTask({ ...task, status: task.status === 'completed' ? 'pending' : 'completed' })
+const toggleTaskStatus = (task) => {
+  const newStatus = task.status === 'completed' ? 'pending' : 'completed'
+
+  updateTask({
+    ...task,
+    status: newStatus
+  })
+
+  showToast(
+    newStatus === 'pending'
+      ? 'Task restored successfully!'
+      : 'Task completed successfully!'
+  )
+}
 
 const handleDelete = (id) => {
   const task = tasks.value.find(t => t.id === id)
@@ -404,10 +593,14 @@ const submitForm = () => {
   }
   if (modal.value.mode === 'create') {
     addTask(taskPayload)
-  } else {
+    showToast('Task added successfully!')
+} else {
     const existing = tasks.value.find(t => t.id === modal.value.taskId)
-    if (existing) updateTask({ ...existing, ...taskPayload })
-  }
+    if (existing) {
+    updateTask({ ...existing, ...taskPayload })
+    showToast('Task updated successfully!')
+}
+}
   closeModal()
 }
 </script>
