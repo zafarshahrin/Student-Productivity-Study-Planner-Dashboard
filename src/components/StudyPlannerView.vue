@@ -65,6 +65,30 @@
       </div>
     </div>
 
+    <!-- Create Custom Study Session -->
+    <div class="premium-card p-5 print:hidden">
+      <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
+        Create Custom Study Session
+      </h3>
+      <form @submit.prevent="handleAddSession" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div class="flex flex-col gap-1 md:col-span-2">
+          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Subject / Topic</label>
+          <input v-model="newSession.subject" required type="text" placeholder="e.g. Math Revision" class="premium-input text-xs font-display" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Date</label>
+          <input v-model="newSession.date" required type="date" class="premium-input text-xs font-display" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Start Time</label>
+          <input v-model="newSession.time" required type="time" class="premium-input text-xs font-display" />
+        </div>
+        <button type="submit" class="premium-btn text-xs font-bold w-full h-[38px]">
+          Add Session
+        </button>
+      </form>
+    </div>
+
     <!-- Tab Buttons -->
     <div class="flex border-b border-[var(--color-border)] justify-between items-center print:hidden">
       <div class="flex">
@@ -188,9 +212,25 @@
 import { ref, inject, computed } from 'vue'
 import { Printer } from 'lucide-vue-next'
 
-const tasks = inject('tasks')
-const settings = inject('plannerSettings')
-const todayPlan = inject('todayPlan')
+const tasks = inject('tasks', ref([]))
+const settings = inject('plannerSettings', ref({}))
+const todayPlan = inject('todayPlan', ref(new Set()))
+const studySessions = inject('studySessions', ref([]))
+const addStudySession = inject('addStudySession', () => {})
+const deleteStudySession = inject('deleteStudySession', () => {})
+
+const newSession = ref({
+  subject: '',
+  date: new Date().toISOString().split('T')[0],
+  time: '09:00',
+  duration: 1
+})
+
+const handleAddSession = () => {
+  if (!newSession.value.subject) return
+  addStudySession({ ...newSession.value })
+  newSession.value.subject = ''
+}
 
 const activeSubTab = ref('daily')
 
@@ -367,6 +407,33 @@ const weeklySchedule = computed(() => {
         deadlineTimeStr: formatDeadlineTime(task)
       })
     }
+  }
+
+  // Add custom study sessions to the weekly schedule
+  const sessionsList = studySessions?.value || []
+  for (const session of sessionsList) {
+    const sessionDate = new Date(session.date)
+    // Adjust for timezone differences when creating dates from YYYY-MM-DD
+    sessionDate.setMinutes(sessionDate.getMinutes() + sessionDate.getTimezoneOffset())
+    const targetDay = scheduleDays.find(d => d.date.toDateString() === sessionDate.toDateString())
+    if (targetDay) {
+      targetDay.tasks.push({
+        title: 'Custom Study Session',
+        subject: session.subject,
+        deadlineTimeStr: formatDeadlineTime({ deadlineTime: session.time }),
+        isSession: true
+      })
+    }
+  }
+
+  // Sort tasks in each day by time
+  for (const day of scheduleDays) {
+    day.tasks.sort((a, b) => {
+      const timeA = a.deadlineTimeStr === 'No time set' ? '23:59' : a.deadlineTimeStr
+      const timeB = b.deadlineTimeStr === 'No time set' ? '23:59' : b.deadlineTimeStr
+      // This is a naive sort based on the string format, could be improved
+      return timeA.localeCompare(timeB)
+    })
   }
 
   return scheduleDays

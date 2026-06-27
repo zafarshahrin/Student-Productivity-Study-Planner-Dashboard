@@ -1,27 +1,24 @@
 <template>
   <div class="min-h-screen bg-[var(--color-bg)] flex flex-col md:flex-row">
-    <!-- Navigation Sidebar -->
     <Sidebar 
       class="print:hidden"
       v-model:activeTab="activeTab" 
       v-model:currentTheme="currentTheme" 
     />
 
-    <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0">
-      <!-- Top navbar header -->
       <header class="print:hidden hidden md:flex items-center justify-between px-8 py-4 border-b border-[var(--color-border)] bg-[var(--color-bg-card)]">
         <div>
           <div>
-  <h2 class="font-display font-bold text-xl text-[var(--color-text-h)]">
-    {{ activeTabName }}
-       </h2>
+            <h2 class="font-display font-bold text-xl text-[var(--color-text-h)]">
+              {{ activeTabName }}
+            </h2>
 
-        <p class="mt-1 text-sm text-[var(--color-text-muted)]">
-        Your academic journey starts here.
-       </p>
-        </div>
-      
+            <p class="mt-1 text-sm text-[var(--color-text-muted)]">
+              Your academic journey starts here.
+            </p>
+          </div>
+        
         </div>
         <div class="flex items-center gap-4 text-xs font-mono text-[var(--color-text-muted)]">
           <span>
@@ -35,19 +32,19 @@
                  ? '🌸 Calm Theme'
                  : '🍵 Dark Theme'
              }}
-        </span>
+          </span>
         </div>
       </header>
 
-      <!-- Panel Content --> 
       <div class="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
         <transition name="fade" mode="out-in">
-          <component :is="activeComponent" />
+          <div :key="activeTab">
+            <component :is="activeComponent" />
+          </div>
         </transition>
       </div>
     </main>
 
-    <!-- Global Toast System (Undo Delete notification) -->
     <div 
       v-if="toast.visible" 
       class="fixed bottom-4 right-4 z-50 flex items-center justify-between gap-4 p-3 border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-lg max-w-sm w-full animate-slide-up"
@@ -86,7 +83,7 @@ import TaskManagementView from './components/TaskManagementView.vue'
 import StudyPlannerView from './components/StudyPlannerView.vue'
 import PomodoroTimerView from './components/PomodoroTimerView.vue'
 import AboutView from './components/AboutView.vue'
-import { useLocalStorage, defaultTasks, defaultPlannerSettings } from './composables/useLocalStorage'
+import { useLocalStorage, defaultTasks, defaultPlannerSettings, defaultStudySessions } from './composables/useLocalStorage'
 
 // Navigation state
 const activeTab = ref('dashboard') //Default tab
@@ -161,6 +158,7 @@ onUnmounted(() => {
 
 // Core State variables
 const tasks = useLocalStorage('studyflow_tasks', defaultTasks)
+const studySessions = useLocalStorage('studyflow_study_sessions', defaultStudySessions)
 const plannerSettings = useLocalStorage('studyflow_planner_settings', defaultPlannerSettings)
 
 // Today's Plan — Set of task IDs selected by user in Task Manager
@@ -227,6 +225,23 @@ const updateTask = (updatedTask) => {
   }
 }
 
+const addStudySession = (session) => {
+  const newId = 's_' + Date.now()
+  studySessions.value.push({
+    id: newId,
+    ...session
+  })
+  triggerToast(`Study session for "${session.subject}" added successfully.`)
+}
+
+const deleteStudySession = (sessionId) => {
+  const idx = studySessions.value.findIndex(s => s.id === sessionId)
+  if (idx !== -1) {
+    studySessions.value.splice(idx, 1)
+    triggerToast(`Deleted study session.`)
+  }
+}
+
 const deleteTask = (taskId) => {
   const idx = tasks.value.findIndex(t => t.id === taskId)
   if (idx !== -1) {
@@ -252,10 +267,13 @@ const undoDelete = () => {
 
 // Provide states and methods to descendants
 provide('tasks', tasks)
+provide('studySessions', studySessions)
 provide('plannerSettings', plannerSettings)
 provide('addTask', addTask)
 provide('updateTask', updateTask)
 provide('deleteTask', deleteTask)
+provide('addStudySession', addStudySession)
+provide('deleteStudySession', deleteStudySession)
 provide('triggerToast', triggerToast)
 provide('todayPlan', todayPlan)
 

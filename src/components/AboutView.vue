@@ -6,9 +6,7 @@
       <h2 class="text-xl font-bold tracking-tight text-[var(--color-text-h)] font-display">
         About Us
       </h2>
-      <p class="text-sm text-[var(--color-text-muted)] mt-1 font-body">
-        Learn more about StudyFlow and the team behind it.
-      </p>
+
     </div>
 
     <!-- About StudyFlow -->

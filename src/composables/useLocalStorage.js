@@ -2,7 +2,16 @@ import { ref, watch } from 'vue'
 
 export function useLocalStorage(key, defaultValue) {
   const storedValue = localStorage.getItem(key)
-  const data = ref(storedValue ? JSON.parse(storedValue) : defaultValue)
+  let parsedValue = defaultValue
+  if (storedValue && storedValue !== 'undefined') {
+    try {
+      parsedValue = JSON.parse(storedValue)
+    } catch (e) {
+      console.error(`Error parsing localStorage key "${key}":`, e)
+      parsedValue = defaultValue
+    }
+  }
+  const data = ref(parsedValue)
 
   watch(
     data,
@@ -60,6 +69,8 @@ export const defaultTasks = [
     status: 'pending'
   }
 ]
+
+export const defaultStudySessions = []
 
 export const defaultPlannerSettings = {
   studyStartTime: '09:00',
