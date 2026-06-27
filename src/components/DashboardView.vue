@@ -27,14 +27,16 @@
     </div>
 
     <!-- Overdue Notification -->
-    <div v-if="overdueTasksList.length > 0 && !overdueDismissed"
-class="border border-red-300 bg-white dark:border-red-500/30 dark:bg-red-500/5 p-4 flex items-start justify-between gap-3">
+    <div
+  v-if="overdueTasksList.length > 0 && !overdueDismissed"
+  class="border border-[var(--color-border)] bg-[var(--color-bg-card)] rounded-xl p-4 flex items-start justify-between gap-3"
+>
 <div class="flex items-start gap-3 flex-1">
         <AlertTriangle class="w-4 h-4 text-red-500 mt-0.5 shrink-0"/>
         <div>
 <p class="text-sm font-display font-bold uppercase tracking-wider text-red-800 mb-1">
           </p>
-          <p class="text-xs font-mono text-red-800 font-semibold mb-2">
+          <p class="text-xs font-mono text-red-300 font-semibold mb-2">
     These tasks missed their deadline. Complete or reschedule them immediately.
 </p>
           <div class="flex flex-wrap gap-2">
@@ -47,7 +49,7 @@ class="flex items-center gap-1.5 border-2 border-red-700 bg-[var(--color-bg-card
 <span class="text-xs font-display font-bold text-red-900 truncate max-w-[180px]"> {{ task.title }}
   </span>
 
-<span class="text-[9px] font-mono font-bold text-red-900">
+<span class="text-[9px] font-mono font-bold text-red-200">
     Due Submission: {{ formatDateTime(task) }}
   </span>
 </div>            
