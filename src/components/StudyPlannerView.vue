@@ -217,9 +217,9 @@
               class="p-2 border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[11px] print:p-1 print:text-[9px]"
               style="border-left: 2px solid var(--color-accent)"
             >
-              <div class="font-bold text-[var(--color-text-h)] truncate print:whitespace-normal print:leading-tight">{{ task.title }}</div>
+              <div class="font-bold text-[var(--color-text-h)] truncate print:whitespace-normal print:leading-tight">{{ task.subject || '—' }}</div>
               <div class="flex items-center justify-between text-[9px] text-[var(--color-text-muted)] font-mono mt-1 print:mt-0.5 print:text-[7px]">
-                <span class="truncate mr-1">{{ task.subject || '—' }}</span>
+                <span class="truncate mr-1">{{ task.title }}</span>
                 <span class="shrink-0 text-[var(--color-accent)] font-semibold">{{ task.deadlineTimeStr }}</span>
               </div>
             </div>
