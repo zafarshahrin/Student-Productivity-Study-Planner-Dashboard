@@ -132,9 +132,14 @@
             </div>
           </div>
         </div>
-        <button @click="generateSchedule" class="premium-btn text-xs font-bold flex items-center gap-2">
-          Generate Schedule
-        </button>
+        <div class="flex items-center gap-4">
+          <button @click="generateSchedule" class="premium-btn text-xs font-bold flex items-center gap-2">
+            Generate Schedule
+          </button>
+          <span class="text-[10px] text-[var(--color-text-muted)] italic font-mono">
+            *Please enter all the input before generate schedule
+          </span>
+        </div>
       </div>
 
       <!-- Step 2: Generated schedule -->
@@ -152,21 +157,21 @@
           No slots generated. Please check your start/end times.
         </div>
 
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-2 print:space-y-0.5">
           <div
             v-for="(slot, idx) in slotAssignments"
             :key="idx"
-            class="flex items-center gap-3 p-3 border border-[var(--color-border)] bg-[var(--color-bg-card)]"
+            class="flex items-center gap-3 p-3 print:p-1.5 border border-[var(--color-border)] bg-[var(--color-bg-card)]"
           >
             <!-- Time label -->
-            <span class="text-[10px] font-mono font-semibold uppercase text-[var(--color-text-muted)] shrink-0 w-36">
+            <span class="text-[10px] print:text-[8px] font-mono font-semibold uppercase text-[var(--color-text-muted)] shrink-0 w-36 print:w-24">
               {{ slot.timeLabel }}
             </span>
 
             <!-- Assignment dropdown -->
             <select
               v-model="slot.value"
-              class="premium-input text-xs font-display flex-1"
+              class="premium-input text-xs print:text-[9px] print:py-0.5 print:px-1 print:h-auto print:border-none font-display flex-1 appearance-none print:appearance-none"
               :class="slot.value && slot.value !== null
                 ? (slot.value === 'break-short' || slot.value === 'break-long'
                     ? 'border-amber-500/50 bg-amber-500/5 text-amber-600'
@@ -185,6 +190,19 @@
               <option value="break-long">Long Break (30 min)</option>
             </select>
           </div>
+        </div>
+
+        <!-- Print Button for Daily Schedule -->
+        <div v-if="slotAssignments.length > 0" class="mt-4 flex justify-end print:hidden">
+          <button 
+            @click="handlePrint" 
+            class="premium-btn text-xs flex items-center gap-2"
+            :disabled="!allSlotsAssigned"
+            :class="{ 'opacity-50 cursor-not-allowed': !allSlotsAssigned }"
+            :title="!allSlotsAssigned ? 'Please fill in all slots before printing' : 'Print Daily Schedule'"
+          >
+            <Printer class="w-4 h-4" /> Print Daily Plan
+          </button>
         </div>
       </div>
     </div>
@@ -275,6 +293,10 @@ const scheduleSetup = ref({
 
 const scheduleGenerated = ref(false)
 const slotAssignments = ref([]) // [{ timeLabel: string, value: string|null }]
+
+const allSlotsAssigned = computed(() => {
+  return slotAssignments.value.length > 0 && slotAssignments.value.every(slot => slot.value !== null)
+})
 
 // Tasks in today's plan that are still pending
 const todayPlanTasks = computed(() => {
