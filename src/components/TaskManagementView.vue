@@ -97,9 +97,6 @@
               <th @click="toggleSort('subject')" class="p-3 cursor-pointer hover:text-[var(--color-text-h)] select-none w-32">
                 <div class="flex items-center gap-1">Subject <ArrowUpDown class="w-3.5 h-3.5"/></div>
               </th>
-              <th @click="toggleSort('estimatedHours')" class="p-3 cursor-pointer hover:text-[var(--color-text-h)] select-none w-24">
-                <div class="flex items-center gap-1">Hours <ArrowUpDown class="w-3.5 h-3.5"/></div>
-              </th>
               <th class="p-3 w-28">Priority</th>
               <th @click="toggleSort('deadline')" class="p-3 cursor-pointer hover:text-[var(--color-text-h)] select-none w-36">
                 <div class="flex items-center gap-1">Deadline <ArrowUpDown class="w-3.5 h-3.5"/></div>
@@ -134,10 +131,6 @@
                   </span>
               </td>
 
-              <!-- Hours -->
-              <td class="p-3">
-                <span class="text-xs font-mono">{{ task.estimatedHours ? `${task.estimatedHours} hrs` : '—' }}</span>
-              </td>
 
               <!-- Auto Priority -->
               <td class="p-3">
@@ -181,7 +174,7 @@
             </tr>
 
             <tr v-if="pendingTasks.length === 0">
-              <td colspan="8" class="p-8 text-center text-xs text-[var(--color-text-muted)] font-mono">
+              <td colspan="7" class="p-8 text-center text-xs text-[var(--color-text-muted)] font-mono">
                 No matching tasks found.
               </td>
             </tr>
@@ -229,15 +222,6 @@
               <span v-if="errors.subject" class="text-[10px] text-red-500 font-mono">{{ errors.subject }}</span>
             </div>
 
-            <!-- Estimated Hours -->
-            <div class="flex flex-col gap-1">
-              <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">
-                Est. Hours <span class="normal-case font-normal">(optional)</span>
-              </label>
-              <input v-model.number="form.estimatedHours" type="number" step="0.5" min="0.5" placeholder="e.g. 2"
-                class="premium-input text-xs font-mono" :class="{ 'border-red-500': errors.estimatedHours }"/>
-              <span v-if="errors.estimatedHours" class="text-[10px] text-red-500 font-mono">{{ errors.estimatedHours }}</span>
-            </div>
           </div>
 
           <!-- Deadline -->
@@ -423,7 +407,7 @@ const sortColumn = ref('deadline')
 const sortAscending = ref(true)
 
 const modal = ref({ show: false, mode: 'create', taskId: null })
-const form = ref({ title: '', subject: '', estimatedHours: null, deadlineDate: '', deadlineTime: '' })
+const form = ref({ title: '', subject: '', deadlineDate: '', deadlineTime: '' })
 const errors = ref({})
 
 
@@ -551,13 +535,13 @@ const cancelDelete = () => { deleteConfirm.value = { show: false, taskId: null, 
 
 const openCreateModal = () => {
   modal.value = { show: true, mode: 'create', taskId: null }
-  form.value = { title: '', subject: '', estimatedHours: null, deadlineDate: new Date().toISOString().split('T')[0], deadlineTime: '23:59' }
+  form.value = { title: '', subject: '', deadlineDate: new Date().toISOString().split('T')[0], deadlineTime: '23:59' }
   errors.value = {}
 }
 
 const openEditModal = (task) => {
   modal.value = { show: true, mode: 'edit', taskId: task.id }
-  form.value = { title: task.title, subject: task.subject, estimatedHours: task.estimatedHours || null, deadlineDate: task.deadline, deadlineTime: task.deadlineTime || '' }
+  form.value = { title: task.title, subject: task.subject, deadlineDate: task.deadline, deadlineTime: task.deadlineTime || '' }
   errors.value = {}
 }
 
@@ -568,8 +552,6 @@ const validateForm = () => {
   if (!form.value.title.trim()) errors.value.title = 'Title is required'
   else if (form.value.title.length > 60) errors.value.title = 'Title must be under 60 characters'
   if (!form.value.subject.trim()) errors.value.subject = 'Subject is required'
-  if (form.value.estimatedHours !== null && form.value.estimatedHours !== '' && form.value.estimatedHours < 0)
-    errors.value.estimatedHours = 'Hours cannot be negative'
   if (!form.value.deadlineDate) {
     errors.value.deadlineDate = 'Deadline date is required'
   } else if (modal.value.mode === 'create') {
@@ -587,7 +569,6 @@ const submitForm = () => {
   const taskPayload = {
     title: form.value.title,
     subject: form.value.subject,
-    estimatedHours: form.value.estimatedHours || 0,
     deadline: form.value.deadlineDate,
     deadlineTime: form.value.deadlineTime
   }

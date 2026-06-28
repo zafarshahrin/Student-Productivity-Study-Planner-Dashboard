@@ -29,37 +29,37 @@
     <!-- Overdue Notification -->
     <div
       v-if="overdueTasksList.length > 0 && !overdueDismissed"
-      class="premium-card border-red-500 p-4 flex items-start justify-between gap-3"
+      class="border border-red-500 bg-red-500/10 p-4 flex items-start justify-between gap-3 rounded-xl"
     >
       <div class="flex items-start gap-3 flex-1">
         <AlertTriangle class="w-4 h-4 text-red-500 mt-0.5 shrink-0"/>
         <div>
-          <p class="text-sm font-display font-bold uppercase tracking-wider text-[var(--color-text-h)] mb-1">
+          <p class="text-sm font-display font-bold uppercase tracking-wider text-red-500 mb-1">
             Missed Deadline
           </p>
-          <p class="text-xs font-mono text-[var(--color-text-muted)] font-semibold mb-2">
+          <p class="text-xs font-mono text-red-400 font-semibold mb-2">
             These tasks missed their deadline. Complete or reschedule them immediately.
           </p>
           <div class="flex flex-wrap gap-2">
             <div
               v-for="task in overdueTasksList"
               :key="task.id"
-              class="flex items-center gap-1.5 border border-red-500 bg-[var(--color-bg-panel)] px-2 py-1" 
+              class="flex items-center gap-1.5 border border-red-500 bg-red-500/10 px-2 py-1 rounded-lg" 
             >
               <div class="flex flex-col">
-                <span class="text-xs font-display font-bold text-[var(--color-text-h)] truncate max-w-[180px]">{{ task.title }}</span>
-                <span class="text-[9px] font-mono font-bold text-[var(--color-text-muted)]">
+                <span class="text-xs font-display font-bold text-red-400 truncate max-w-[180px]">{{ task.title }}</span>
+                <span class="text-[9px] font-mono font-bold text-red-400/70">
                   Due: {{ task.deadline }}
                 </span>
               </div>            
-              <span class="text-[9px] font-mono px-1 border border-red-500 bg-red-500/10 text-red-500 uppercase font-bold shrink-0">
+              <span class="text-[9px] font-mono px-1 border border-red-500 bg-red-500/20 text-red-400 uppercase font-bold shrink-0">
                 {{ getDaysOverdue(task) }}D OVERDUE
               </span>              
             </div>
           </div>
         </div>
       </div>
-      <button @click="overdueDismissed = true" class="text-[var(--color-text-muted)] hover:text-red-500 cursor-pointer shrink-0">
+      <button @click="overdueDismissed = true" class="text-red-400 hover:text-red-300 cursor-pointer shrink-0">
         <X class="w-3.5 h-3.5"/>
       </button>
     </div>
@@ -251,79 +251,36 @@
           </div>
         </div>
 
-       <!-- Past Due Tasks -->
-<div class="border border-red-500/25 bg-[var(--color-bg-card)] p-4">
-
-  <div class="flex items-center justify-between mb-4">
-    <div class="flex items-center gap-2">
-      <AlertTriangle class="w-4 h-4 text-red-500"/>
-
-      <h3 class="text-sm uppercase font-display font-bold tracking-wider text-red-600">
-        Past Due Tasks
-      </h3>
-    </div>
-
-    <span
-      v-if="overdueTasksList.length > 0"
-class="text-[9px] font-mono font-bold px-2 py-0.5 border border-red-700 bg-red-100 text-red-700 dark:border-red-600 dark:bg-red-700 dark:text-white uppercase rounded">      {{ overdueTasksList.length }} overdue
-    </span>
-  </div>
-
-  <div
-    v-if="overdueTasksList.length === 0"
-    class="py-5 flex flex-col items-center gap-2 border border-dashed border-red-200 rounded-lg text-center"
-  >
-    <span class="text-green-500 text-lg">✓</span>
-
-    <p class="text-[10px] font-mono text-[var(--color-text-muted)]">
-      No overdue tasks
-    </p>
-  </div>
-
-  <div
-    v-else
-    class="space-y-2 max-h-[220px] overflow-y-auto"
-  >
-    <div
-      v-for="task in overdueTasksList"
-      :key="task.id"
-class="flex items-start gap-3 p-3 border border-red-500/30 bg-red-500/10 rounded-lg hover:bg-red-500/15 transition-all">
-      <span class="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-2"></span>
-
-      <div class="flex-1 min-w-0">
-
-<p class="text-sm font-display font-bold text-red-400 truncate">         {{ task.title }}
-        </p>
-
-        <div class="flex items-center justify-between mt-2 gap-2">
-
-<span class="text-[9px] font-mono text-red-300 truncate">            {{ task.subject }}
-          </span>
-
-<span class="text-[9px] font-mono text-red-300 shrink-0">            Was due {{ formatDateTime(task) }}
-          </span>
-
+        <!-- Past Due Tasks -->
+        <div class="border border-red-500 bg-red-500/10 p-4 rounded-xl">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs uppercase font-display font-bold tracking-wider text-red-500">Past Due Tasks</h3>
+            <span
+              v-if="overdueTasksList.length > 0"
+              class="text-[9px] font-mono font-bold px-1.5 py-0.5 border border-red-500 bg-red-500/20 text-red-500 uppercase"
+            >
+              {{ overdueTasksList.length }} overdue
+            </span>
+          </div>
+          <div class="space-y-2">
+            <div v-for="task in overdueTasksList" :key="task.id"
+              class="p-2.5 border border-red-500/40 bg-red-500/10 flex flex-col gap-1.5 rounded-lg">
+              <div class="flex items-start justify-between gap-2">
+                <span class="text-xs font-bold text-red-400 font-display truncate">{{ task.title }}</span>
+                <span class="text-[9px] font-mono font-bold px-1 border border-red-500 bg-red-500/20 text-red-400 uppercase shrink-0">
+                  {{ getDaysOverdue(task) }}D OVERDUE
+                </span>
+              </div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-red-400/70">
+                <span>{{ task.subject }}</span>
+                <span>Was due: {{ formatDateTime(task) }}</span>
+              </div>
+            </div>
+            <div v-if="overdueTasksList.length === 0" class="p-6 text-center text-xs font-mono text-red-400/70 border border-dashed border-red-500/40">
+              No overdue tasks!
+            </div>
+          </div>
         </div>
-
-      </div>
-
-      <span
-<span
-  class="text-[9px] font-mono font-bold px-1.5 py-0.5 border border-red-500/40 bg-red-500/10 text-red-500 uppercase shrink-0">      
-        {{ getDaysOverdue(task) }}D OVERDUE
-      </span>
-
-    </div>
-  </div>
-
-  <p
-  v-if="overdueTasksList.length > 0"
-  class="text-[10px] font-mono font-semibold text-red-400 mt-3 text-center"
->
-  Complete or reschedule these tasks.
-</p>
-
-</div>
      
         
 

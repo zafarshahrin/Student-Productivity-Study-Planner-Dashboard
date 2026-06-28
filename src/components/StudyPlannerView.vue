@@ -1,40 +1,10 @@
 <template>
   <div class="space-y-6">
 
-    <!-- My Study Preferences -->
-    <div class="premium-card p-5 print:hidden">
-      <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
-        My Study Preferences
-      </h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="flex flex-col gap-1">
-          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Study Start Time</label>
-          <input v-model="settings.studyStartTime" type="time" class="premium-input text-xs font-display"/>
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Break Duration</label>
-          <select v-model.number="settings.breakDuration" class="premium-input text-xs font-display">
-            <option :value="5">5 min</option>
-            <option :value="10">10 min</option>
-            <option :value="15">15 min</option>
-            <option :value="30">30 min</option>
-          </select>
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Break Frequency</label>
-          <select v-model.number="settings.breakFrequency" class="premium-input text-xs font-display">
-            <option :value="1">After every 1 hour</option>
-            <option :value="2">After every 2 hours</option>
-            <option :value="3">After every 3 hours</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
     <!-- Planner Settings -->
     <div class="premium-card p-5 print:hidden">
       <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
-        Planner Settings & Rules
+        Planner Settings &amp; Rules
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="flex flex-col gap-1">
@@ -70,7 +40,7 @@
       <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
         Create Custom Study Session
       </h3>
-      <form @submit.prevent="handleAddSession" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+      <form @submit.prevent="handleAddSession" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
         <div class="flex flex-col gap-1 md:col-span-2">
           <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Subject / Topic</label>
           <input v-model="newSession.subject" required type="text" placeholder="e.g. Math Revision" class="premium-input text-xs font-display" />
@@ -82,6 +52,10 @@
         <div class="flex flex-col gap-1">
           <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Start Time</label>
           <input v-model="newSession.time" required type="time" class="premium-input text-xs font-display" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">End Time</label>
+          <input v-model="newSession.endTime" required type="time" class="premium-input text-xs font-display" />
         </div>
         <button type="submit" class="premium-btn text-xs font-bold w-full h-[38px]">
           Add Session
@@ -116,47 +90,104 @@
       </button>
     </div>
 
-    <!-- Daily Timeline -->
+    <!-- Daily Schedule -->
     <div v-if="activeSubTab === 'daily'">
-      <div class="premium-card p-5">
+
+      <!-- Step 1: Setup (shown when schedule not yet generated) -->
+      <div v-if="!scheduleGenerated" class="premium-card p-5">
+        <h4 class="text-sm font-bold text-[var(--color-text-h)] font-display uppercase tracking-wider mb-4 border-b border-[var(--color-border)] pb-3">
+          Daily Schedule Setup
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+          <!-- Start Time -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Study Start Time</label>
+            <input v-model="scheduleSetup.startTime" type="time" class="premium-input text-xs font-display" />
+          </div>
+          <!-- End Time -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Study End Time</label>
+            <input v-model="scheduleSetup.endTime" type="time" class="premium-input text-xs font-display" />
+          </div>
+          <!-- Slot Duration -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Slot Duration</label>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                @click="scheduleSetup.slotDuration = 30"
+                class="flex-1 px-3 py-2 text-xs font-display font-bold uppercase tracking-wider border transition-all cursor-pointer"
+                :class="scheduleSetup.slotDuration === 30
+                  ? 'bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-accent)]'
+                  : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-h)] hover:border-[var(--color-text-h)]'"
+              >
+                30 min
+              </button>
+              <button
+                type="button"
+                @click="scheduleSetup.slotDuration = 60"
+                class="flex-1 px-3 py-2 text-xs font-display font-bold uppercase tracking-wider border transition-all cursor-pointer"
+                :class="scheduleSetup.slotDuration === 60
+                  ? 'bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-accent)]'
+                  : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-h)] hover:border-[var(--color-text-h)]'"
+              >
+                1 hour
+              </button>
+            </div>
+          </div>
+        </div>
+        <button @click="generateSchedule" class="premium-btn text-xs font-bold flex items-center gap-2">
+          Generate Schedule
+        </button>
+      </div>
+
+      <!-- Step 2: Generated schedule -->
+      <div v-else class="premium-card p-5">
         <div class="flex items-center justify-between mb-4 border-b border-[var(--color-border)] pb-3">
           <h4 class="text-sm font-bold text-[var(--color-text-h)] font-display uppercase tracking-wider">
-            Daily Timeline (Today)
+            Daily Schedule — Today
           </h4>
-          <span class="text-xs font-mono text-[var(--color-text-muted)]">
-            Starts at {{ formatTime(getParsedStartTime()) }} • Max {{ settings.dailyHourLimit }} Study Hours
-          </span>
+          <button @click="resetSchedule" class="premium-btn-secondary text-xs flex items-center gap-1.5">
+            Reset Schedule
+          </button>
         </div>
 
-        <div v-if="dailyTimeline.length === 0" class="py-8 text-center text-xs font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
-          No tasks added to today's plan yet. Go to Task Manager and toggle "Add to Today's Plan" on pending tasks.
+        <div v-if="slotAssignments.length === 0" class="py-8 text-center text-xs font-mono text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)]">
+          No slots generated. Please check your start/end times.
         </div>
 
-        <div v-else class="relative pl-6 border-l border-[var(--color-border)] ml-3 space-y-4 py-2">
-          <div v-for="(block, idx) in dailyTimeline" :key="idx" class="relative">
-            <div
-              class="absolute -left-[27px] top-3 w-2.5 h-2.5 rounded-full"
-              :class="block.type === 'break' ? 'bg-amber-500' : 'bg-[var(--color-accent)]'"
-            ></div>
-            <div
-              class="p-3.5 border border-[var(--color-border)] bg-[var(--color-bg-card)]"
-              :style="block.type === 'break' ? 'border-left: 2px solid #d97706' : 'border-left: 2px solid var(--color-accent)'"
+        <div v-else class="space-y-2">
+          <div
+            v-for="(slot, idx) in slotAssignments"
+            :key="idx"
+            class="flex items-center gap-3 p-3 border border-[var(--color-border)] bg-[var(--color-bg-card)]"
+          >
+            <!-- Time label -->
+            <span class="text-[10px] font-mono font-semibold uppercase text-[var(--color-text-muted)] shrink-0 w-36">
+              {{ slot.timeLabel }}
+            </span>
+
+            <!-- Assignment dropdown -->
+            <select
+              v-model="slot.value"
+              class="premium-input text-xs font-display flex-1"
+              :class="slot.value && slot.value !== null
+                ? (slot.value === 'break-short' || slot.value === 'break-long'
+                    ? 'border-amber-500/50 bg-amber-500/5 text-amber-600'
+                    : 'border-[var(--color-accent)]/50 bg-[var(--color-accent)]/5')
+                : ''"
             >
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <div>
-                  <span class="text-[10px] font-mono font-semibold uppercase text-[var(--color-text-muted)]">
-                    {{ block.startTimeStr }} - {{ block.endTimeStr }} ({{ formatDuration(block.durationHrs) }}{{ block.isEstimatedFallback ? ' est.' : '' }})
-                  </span>
-                  <h5 class="text-sm font-bold text-[var(--color-text-h)] font-display mt-0.5">{{ block.title }}</h5>
-                </div>
-                <span v-if="block.subject" class="px-2 py-0.5 text-[10px] border border-[var(--color-border)] bg-[var(--color-bg-panel)] font-display font-medium self-start sm:self-center">
-                  {{ block.subject }}
-                </span>
-                <span v-else class="px-2 py-0.5 text-[10px] border border-amber-500/20 bg-amber-500/10 text-amber-600 font-display font-medium self-start sm:self-center">
-                  Rest Block
-                </span>
-              </div>
-            </div>
+              <option :value="null">-- Empty --</option>
+              <option
+                v-for="task in todayPlanTasks"
+                :key="task.id"
+                :value="task.id"
+              >
+                {{ task.title }}
+              </option>
+              <option value="break-short">Short Break (15 min)</option>
+              <option value="break-long">Long Break (30 min)</option>
+            </select>
           </div>
         </div>
       </div>
@@ -219,10 +250,12 @@ const studySessions = inject('studySessions', ref([]))
 const addStudySession = inject('addStudySession', () => {})
 const deleteStudySession = inject('deleteStudySession', () => {})
 
+// ── Custom Session ────────────────────────────────────────────────
 const newSession = ref({
   subject: '',
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
+  endTime: '10:00',
   duration: 1
 })
 
@@ -230,22 +263,68 @@ const handleAddSession = () => {
   if (!newSession.value.subject) return
   addStudySession({ ...newSession.value })
   newSession.value.subject = ''
+  newSession.value.endTime = '10:00'
 }
 
+// ── Tab state ─────────────────────────────────────────────────────
 const activeSubTab = ref('daily')
 
 const handlePrint = () => {
   window.print()
 }
 
-const formatDuration = (hours) => {
-  const h = Math.floor(hours)
-  const m = Math.round((hours - h) * 60)
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
+// ── Daily Schedule Setup ──────────────────────────────────────────
+const scheduleSetup = ref({
+  startTime: '09:00',
+  endTime: '17:00',
+  slotDuration: 60 // minutes: 30 or 60
+})
+
+const scheduleGenerated = ref(false)
+const slotAssignments = ref([]) // [{ timeLabel: string, value: string|null }]
+
+// Tasks in today's plan that are still pending
+const todayPlanTasks = computed(() => {
+  const planSet = todayPlan ? todayPlan.value : new Set()
+  return tasks.value.filter(t => t.status === 'pending' && planSet.has(t.id))
+})
+
+const formatTimeFromMinutes = (totalMinutes) => {
+  const h = Math.floor(totalMinutes / 60) % 24
+  const m = totalMinutes % 60
+  const period = h >= 12 ? 'PM' : 'AM'
+  const displayH = h % 12 === 0 ? 12 : h % 12
+  const displayM = m < 10 ? '0' + m : m
+  return `${displayH}:${displayM} ${period}`
 }
 
+const generateSchedule = () => {
+  const [sh, sm] = scheduleSetup.value.startTime.split(':').map(Number)
+  const [eh, em] = scheduleSetup.value.endTime.split(':').map(Number)
+  const startMins = sh * 60 + sm
+  const endMins = eh * 60 + em
+  const slotMins = scheduleSetup.value.slotDuration
+
+  if (endMins <= startMins || slotMins <= 0) return
+
+  const slots = []
+  for (let cur = startMins; cur + slotMins <= endMins; cur += slotMins) {
+    slots.push({
+      timeLabel: `${formatTimeFromMinutes(cur)} – ${formatTimeFromMinutes(cur + slotMins)}`,
+      value: null
+    })
+  }
+
+  slotAssignments.value = slots
+  scheduleGenerated.value = true
+}
+
+const resetSchedule = () => {
+  scheduleGenerated.value = false
+  slotAssignments.value = []
+}
+
+// ── Utility helpers ───────────────────────────────────────────────
 const formatTime = (timeDecimal) => {
   const hoursInt = Math.floor(timeDecimal)
   const minsInt = Math.round((timeDecimal - hoursInt) * 60)
@@ -255,14 +334,6 @@ const formatTime = (timeDecimal) => {
   let displayHours = h % 12
   if (displayHours === 0) displayHours = 12
   return `${displayHours}:${displayMins} ${period}`
-}
-
-const getParsedStartTime = () => {
-  if (settings.value.studyStartTime) {
-    const [sh, sm] = settings.value.studyStartTime.split(':')
-    return parseInt(sh, 10) + parseInt(sm, 10) / 60
-  }
-  return 9.0
 }
 
 const formatDateHeader = (date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -297,20 +368,14 @@ const getSortedPendingTasks = (forDaily = false) => {
     const planSet = todayPlan ? todayPlan.value : new Set()
     pending = pending.filter(t => planSet.has(t.id))
   }
-  if (settings.value.planningStrategy === 'balanced') {
-    return [...pending].sort((a, b) => {
-      const dDiff = getTaskDeadlineDate(a) - getTaskDeadlineDate(b)
-      if (dDiff !== 0) return dDiff
-      return (b.estimatedHours || 0) - (a.estimatedHours || 0)
-    })
-  }
   return [...pending].sort((a, b) => getTaskDeadlineDate(a) - getTaskDeadlineDate(b))
 }
 
+// dailyTimeline is kept for internal use / future reference but no longer rendered
 const dailyTimeline = computed(() => {
   const sortedTasks = getSortedPendingTasks(true)
   const timeline = []
-  let currentHour = getParsedStartTime()
+  let currentHour = 9.0
   let studyHoursScheduled = 0
   const maxStudyLimit = settings.value.dailyHourLimit || 6
   const breakFreq = settings.value.breakFrequency || 2
@@ -319,8 +384,7 @@ const dailyTimeline = computed(() => {
 
   for (const task of sortedTasks) {
     if (studyHoursScheduled >= maxStudyLimit) break
-    const isEstimated = !task.estimatedHours || task.estimatedHours === 0
-    const actualHours = isEstimated ? 1 : task.estimatedHours
+    const actualHours = 1
     const remainingLimit = maxStudyLimit - studyHoursScheduled
     let taskDurationLeft = Math.min(actualHours, remainingLimit)
     if (taskDurationLeft <= 0) continue
@@ -338,8 +402,7 @@ const dailyTimeline = computed(() => {
         subject: task.subject,
         startTimeStr,
         endTimeStr: formatTime(currentHour),
-        durationHrs: chunkDuration,
-        isEstimatedFallback: isEstimated
+        durationHrs: chunkDuration
       })
 
       taskDurationLeft -= chunkDuration
@@ -351,7 +414,7 @@ const dailyTimeline = computed(() => {
         currentHour += breakDur
         timeline.push({
           type: 'break',
-          title: `${settings.value.breakDuration}-Minute Rest Break`,
+          title: `${settings.value.breakDuration || 15}-Minute Rest Break`,
           subject: '',
           startTimeStr: breakStart,
           endTimeStr: formatTime(currentHour),
@@ -420,7 +483,9 @@ const weeklySchedule = computed(() => {
       targetDay.tasks.push({
         title: 'Custom Study Session',
         subject: session.subject,
-        deadlineTimeStr: formatDeadlineTime({ deadlineTime: session.time }),
+        deadlineTimeStr: session.endTime
+          ? `${formatDeadlineTime({ deadlineTime: session.time })} – ${formatDeadlineTime({ deadlineTime: session.endTime })}`
+          : formatDeadlineTime({ deadlineTime: session.time }),
         isSession: true
       })
     }
@@ -431,7 +496,6 @@ const weeklySchedule = computed(() => {
     day.tasks.sort((a, b) => {
       const timeA = a.deadlineTimeStr === 'No time set' ? '23:59' : a.deadlineTimeStr
       const timeB = b.deadlineTimeStr === 'No time set' ? '23:59' : b.deadlineTimeStr
-      // This is a naive sort based on the string format, could be improved
       return timeA.localeCompare(timeB)
     })
   }
