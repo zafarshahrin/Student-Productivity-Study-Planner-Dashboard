@@ -1,27 +1,7 @@
 <template>
   <div class="h-full flex flex-col space-y-6">
 
-    <!-- Header -->
-    <div class="mb-2">
-      <h2 class="text-xl font-bold tracking-tight text-[var(--color-text-h)] font-display">
-        About Us
-      </h2>
 
-    </div>
-
-    <!-- About StudyFlow -->
-    <div class="premium-card p-5">
-      <h3 class="text-md font-semibold text-[var(--color-text-h)] font-display uppercase tracking-wider mb-2">
-        About StudyFlow
-      </h3>
-      <p class="text-sm text-[var(--color-text-muted)] leading-relaxed font-body">
-        StudyFlow is a student productivity dashboard that helps 
-        students manage academic tasks, plan study schedules, and 
-        track productivity. Features include: Task Manager, Daily & 
-        Weekly Study Planner, Pomodoro Timer, and productivity 
-        analytics with charts.
-      </p>
-    </div>
 
     <!-- Meet The Team -->
     <div>

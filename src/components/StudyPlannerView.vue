@@ -40,11 +40,7 @@
       <h3 class="text-xs uppercase font-display font-bold tracking-wider text-[var(--color-text-h)] mb-4">
         Create Custom Study Session
       </h3>
-      <form @submit.prevent="handleAddSession" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-        <div class="flex flex-col gap-1 md:col-span-2">
-          <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Subject / Topic</label>
-          <input v-model="newSession.subject" required type="text" placeholder="e.g. Math Revision" class="premium-input text-xs font-display" />
-        </div>
+      <form @submit.prevent="handleAddSession" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <div class="flex flex-col gap-1">
           <label class="text-[11px] uppercase font-display font-bold tracking-wider text-[var(--color-text-muted)]">Date</label>
           <input v-model="newSession.date" required type="date" class="premium-input text-xs font-display" />
@@ -252,7 +248,6 @@ const deleteStudySession = inject('deleteStudySession', () => {})
 
 // ── Custom Session ────────────────────────────────────────────────
 const newSession = ref({
-  subject: '',
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
   endTime: '10:00',
@@ -260,9 +255,7 @@ const newSession = ref({
 })
 
 const handleAddSession = () => {
-  if (!newSession.value.subject) return
   addStudySession({ ...newSession.value })
-  newSession.value.subject = ''
   newSession.value.endTime = '10:00'
 }
 
@@ -482,7 +475,7 @@ const weeklySchedule = computed(() => {
     if (targetDay) {
       targetDay.tasks.push({
         title: 'Custom Study Session',
-        subject: session.subject,
+        subject: '',
         deadlineTimeStr: session.endTime
           ? `${formatDeadlineTime({ deadlineTime: session.time })} – ${formatDeadlineTime({ deadlineTime: session.endTime })}`
           : formatDeadlineTime({ deadlineTime: session.time }),
